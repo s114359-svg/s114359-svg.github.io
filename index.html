@@ -6,412 +6,494 @@
 
 <title>放學後的圖書館</title>
 
-<style>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;500&display=swap" rel="stylesheet">
 
+<style>
 *{
+    margin:0;
+    padding:0;
     box-sizing:border-box;
 }
 
 body{
-    margin:0;
-    min-height:100vh;
+    background:#000;
+    color:#ddd;
+    font-family:"Noto Serif TC", serif;
+    height:100vh;
+    overflow:hidden;
+}
+
+#game{
     display:flex;
-    justify-content:center;
-    align-items:center;
-
-    background:linear-gradient(
-        135deg,
-        #dbeafe,
-        #f8fafc
-    );
-
-    font-family:"Microsoft JhengHei",sans-serif;
+    height:100vh;
 }
 
-.container{
-    width:90%;
-    max-width:750px;
-
-    background:white;
-
-    padding:35px;
-
-    border-radius:18px;
-
-    box-shadow:
-        0 10px 30px rgba(0,0,0,.15);
+#main{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    padding:40px;
 }
 
-h1{
-    text-align:center;
-    color:#1e3a8a;
-    margin-bottom:25px;
+#title{
+    color:#fff;
+    font-size:28px;
+    margin-bottom:20px;
 }
 
-#story{
-    min-height:180px;
-
+#text{
+    flex:1;
+    line-height:2;
     font-size:20px;
-
-    line-height:1.8;
-
-    white-space:pre-line;
-
-    margin-bottom:25px;
+    white-space:pre-wrap;
 }
 
-.buttons{
+#choices{
     display:flex;
     flex-wrap:wrap;
-    gap:12px;
-}
-
-button{
-    padding:12px 20px;
-
-    border:none;
-
-    border-radius:10px;
-
-    background:#2563eb;
-
-    color:white;
-
-    font-size:16px;
-
-    cursor:pointer;
-
-    transition:.2s;
-}
-
-button:hover{
-    transform:translateY(-2px);
-    background:#1d4ed8;
-}
-
-.cursor{
-    display:inline-block;
-
-    width:2px;
-    height:22px;
-
-    background:black;
-
-    margin-left:2px;
-
-    animation:blink .8s infinite;
-}
-
-@keyframes blink{
-    50%{
-        opacity:0;
-    }
-}
-
-.good{
-    color:#16a34a;
-    font-weight:bold;
-}
-
-.normal{
-    color:#d97706;
-    font-weight:bold;
-}
-
-.bad{
-    color:#dc2626;
-    font-weight:bold;
-}
-
-.footer{
+    gap:25px;
     margin-top:20px;
-    font-size:14px;
-    color:#64748b;
-    text-align:center;
 }
 
+.choice{
+    background:none;
+    border:none;
+    color:#aaa;
+    font-size:18px;
+    cursor:pointer;
+    transition:.2s;
+    font-family:inherit;
+}
+
+.choice:hover{
+    color:white;
+}
+
+#side{
+    width:320px;
+    border-left:1px solid #222;
+    padding:30px;
+}
+
+.panel-title{
+    color:white;
+    margin-bottom:15px;
+    font-size:22px;
+}
+
+.side-buttons{
+    display:flex;
+    gap:15px;
+    margin-bottom:20px;
+}
+
+.side-btn{
+    background:none;
+    border:none;
+    color:#aaa;
+    cursor:pointer;
+    font-family:inherit;
+    font-size:16px;
+}
+
+.side-btn:hover{
+    color:white;
+}
+
+#panelContent{
+    line-height:1.8;
+    white-space:pre-wrap;
+    color:#bbb;
+}
+
+#restartBtn{
+    margin-top:30px;
+    background:none;
+    border:none;
+    color:#888;
+    cursor:pointer;
+    font-family:inherit;
+    font-size:16px;
+}
+
+#restartBtn:hover{
+    color:#fff;
+}
 </style>
 </head>
-
 <body>
 
-<div class="container">
+<div id="game">
 
-<h1>放學後的圖書館</h1>
+    <div id="main">
 
-<div id="story"></div>
+        <div id="title">放學後的圖書館</div>
 
-<div id="choices" class="buttons"></div>
+        <div id="text"></div>
 
-<div class="footer">
-互動式小說示範作品
-</div>
+        <div id="choices"></div>
+
+    </div>
+
+    <div id="side">
+
+        <div class="panel-title">功能</div>
+
+        <div class="side-buttons">
+            <button class="side-btn" onclick="showInventory()">
+                物品
+            </button>
+
+            <button class="side-btn" onclick="showMemo()">
+                備忘錄
+            </button>
+        </div>
+
+        <div id="panelContent">
+歡迎來到圖書館。
+        </div>
+
+        <button id="restartBtn" onclick="restartGame()">
+            重新開始
+        </button>
+
+    </div>
 
 </div>
 
 <script>
 
-const story = document.getElementById("story");
-const choices = document.getElementById("choices");
+const textBox = document.getElementById("text");
+const choiceBox = document.getElementById("choices");
+const panelContent = document.getElementById("panelContent");
 
-let typing = false;
+let currentScene = "study";
 
-/* =========================
-   打字機效果
-========================= */
+let inventory = [];
 
-function typeWriter(text, callback = null){
+let memos = [];
 
-    typing = true;
+let explored = {};
 
-    story.innerHTML = "";
+const scenes = {
 
-    let i = 0;
+study:{
+name:"自修室",
 
-    const timer = setInterval(()=>{
+desc:"放學後的圖書館格外安靜。你坐在自修室裡，昏黃的燈光照著空蕩蕩的桌面。",
 
-        story.innerHTML =
-            text.substring(0,i+1) +
-            '<span class="cursor"></span>';
+choices:[
+["盆栽",()=>explore("plant")],
+["桌面",()=>explore("desk")],
+["前往走廊",()=>move("hall")]
+]
+},
+
+hall:{
+name:"走廊",
+
+desc:"長長的走廊連接著圖書館各處，空氣中瀰漫著紙張與灰塵的味道。",
+
+choices:[
+["返回自修室",()=>move("study")],
+["前往廁所",()=>move("toilet")],
+["前往閱覽室",()=>move("reading")],
+["前往辦公室",()=>move("office")]
+]
+},
+
+toilet:{
+name:"廁所",
+
+desc:"冷白色燈光映照著空蕩的廁所。",
+
+choices:[
+["廁所隔間",()=>explore("stall")],
+["工具間",()=>explore("storage")],
+["洗手台",()=>explore("sink")],
+["返回走廊",()=>move("hall")]
+]
+},
+
+reading:{
+name:"閱覽室",
+
+desc:"成排書架安靜地矗立著。",
+
+choices:[
+["書架",()=>explore("bookshelf")],
+["沙發",()=>explore("sofa")],
+["報章雜誌",()=>explore("magazine")],
+["櫃檯",()=>explore("counter")],
+["返回走廊",()=>move("hall")]
+]
+},
+
+office:{
+name:"辦公室",
+
+desc:"管理員似乎已經下班。",
+
+choices:[
+["辦公桌",()=>explore("officeDesk")],
+["飲水機",()=>explore("water")],
+["返回走廊",()=>move("hall")]
+]
+}
+
+};
+
+function typeWriter(text){
+
+    textBox.innerHTML="";
+
+    let i=0;
+
+    const timer=setInterval(()=>{
+
+        textBox.innerHTML += text.charAt(i);
 
         i++;
 
-        if(i >= text.length){
-
+        if(i>=text.length){
             clearInterval(timer);
-
-            story.innerHTML = text;
-
-            typing = false;
-
-            if(callback){
-                callback();
-            }
         }
 
-    },30);
+    },20);
 
 }
 
-/* =========================
-   開場
-========================= */
+function move(scene){
 
-function startGame(){
+    currentScene=scene;
 
-    choices.innerHTML = "";
+    renderScene();
 
-    typeWriter(
-`一個平平無奇的下午，
+}
 
-你一如往常地到學校圖書館的自習室複習功課，
+function renderScene(){
 
-涼爽的冷氣，解不出的數學題目，還有你絞盡腦汁還是得不出的答案，
+    const scene=scenes[currentScene];
 
-你揉了揉酸澀的眼睛，
+    typeWriter(scene.desc);
 
-決定暫時放過自己，
+    choiceBox.innerHTML="";
 
-闔上書本在桌上趴下，
+    scene.choices.forEach(c=>{
 
-任由自己墜入夢鄉......`,
-    ()=>{
-        choices.innerHTML = `
-            <button onclick="library()">📚 前往圖書館</button>
-            <button onclick="gym()">🏀 前往體育館</button>
-        `;
+        const btn=document.createElement("button");
+
+        btn.className="choice";
+
+        btn.innerText=c[0];
+
+        btn.onclick=c[1];
+
+        choiceBox.appendChild(btn);
+
     });
 
 }
 
-/* =========================
-   圖書館路線
-========================= */
+function addMemo(text){
 
-function library(){
-
-    choices.innerHTML = "";
-
-    typeWriter(
-`你來到圖書館。
-
-管理員表示：
-
-「昨天下午有個學生在展示櫃附近徘徊很久。」
-
-你打算怎麼調查？`,
-    ()=>{
-        choices.innerHTML = `
-            <button onclick="camera()">📹 檢查監視器</button>
-            <button onclick="bookshelf()">📖 搜尋書架</button>
-        `;
-    });
+    if(!memos.includes(text))
+        memos.push(text);
 
 }
 
-/* =========================
-   體育館路線
-========================= */
+function addItem(item){
 
-function gym(){
-
-    choices.innerHTML = "";
-
-    typeWriter(
-`你來到體育館。
-
-籃球隊剛結束訓練。
-
-有人說昨天看到老師拿著獎盃經過。
-
-你要怎麼調查？`,
-    ()=>{
-        choices.innerHTML = `
-            <button onclick="captain()">🗣 詢問隊長</button>
-            <button onclick="locker()">🔒 查看置物櫃</button>
-        `;
-    });
+    if(!inventory.includes(item))
+        inventory.push(item);
 
 }
 
-/* =========================
-   結局
-========================= */
+function explore(id){
 
-function camera(){
+switch(id){
 
-    choices.innerHTML = "";
+case "plant":
 
-    typeWriter(
-`【好結局】
+if(!explored.plant){
 
-監視器顯示：
+explored.plant=true;
 
-獎盃其實被拿去清潔保養。
+addItem("生鏽鑰匙");
 
-清潔完成後順利歸還。
+typeWriter("盆栽泥土有被翻動的痕跡，你找到了一把生鏽鑰匙。");
 
-事件成功解決！`,
-    ()=>{
-        story.innerHTML =
-        `<span class="good">【好結局】</span>
+}else{
 
-監視器顯示：
-
-獎盃其實被拿去清潔保養。
-
-清潔完成後順利歸還。
-
-事件成功解決！`;
-
-        restartButton();
-    });
+typeWriter("盆栽已經被你仔細翻找過了。");
 
 }
 
-function bookshelf(){
+break;
 
-    choices.innerHTML = "";
+case "desk":
 
-    typeWriter(
-`【壞結局】
+typeWriter("桌面上殘留著鉛筆痕跡與一張借閱單。");
 
-你花了整個下午翻遍書架。
+break;
 
-可惜沒有任何線索。
+case "stall":
 
-放學鐘聲響起，
-調查失敗。`,
-    ()=>{
-        story.innerHTML =
-        `<span class="bad">【壞結局】</span>
+typeWriter("隔間裡沒有任何人。");
 
-你花了整個下午翻遍書架。
+break;
 
-可惜沒有任何線索。
+case "storage":
 
-放學鐘聲響起，
-調查失敗。`;
+if(!inventory.includes("生鏽鑰匙")){
 
-        restartButton();
-    });
+let hint="工具間似乎上鎖了，需要某種鑰匙。";
 
-}
+addMemo(hint);
 
-function captain(){
+typeWriter(hint);
 
-    choices.innerHTML = "";
+}else{
 
-    typeWriter(
-`【普通結局】
+if(!explored.storage){
 
-隊長提供了不少情報。
+explored.storage=true;
 
-雖然沒找到獎盃，
-但成功鎖定嫌疑人。
+addItem("舊文件");
 
-後續交由老師處理。`,
-    ()=>{
-        story.innerHTML =
-        `<span class="normal">【普通結局】</span>
+typeWriter("你用鑰匙打開工具間，找到了一份舊文件。");
 
-隊長提供了不少情報。
+}else{
 
-雖然沒找到獎盃，
-但成功鎖定嫌疑人。
-
-後續交由老師處理。`;
-
-        restartButton();
-    });
+typeWriter("工具間空空如也。");
 
 }
 
-function locker(){
+}
 
-    choices.innerHTML = "";
+break;
 
-    typeWriter(
-`【好結局】
+case "sink":
 
-你在置物櫃找到獎盃。
+typeWriter("洗手台反射著蒼白燈光。");
 
-原來老師怕獎盃被碰撞損壞，
-暫時移到安全位置保管。
+break;
 
-真相大白！`,
-    ()=>{
-        story.innerHTML =
-        `<span class="good">【好結局】</span>
+case "bookshelf":
 
-你在置物櫃找到獎盃。
+typeWriter("書架上陳列著各種舊書。");
 
-原來老師怕獎盃被碰撞損壞，
-暫時移到安全位置保管。
+break;
 
-真相大白！`;
+case "sofa":
 
-        restartButton();
-    });
+typeWriter("沙發上有被人坐過的痕跡。");
+
+break;
+
+case "magazine":
+
+typeWriter("幾份過期報紙記錄著數年前的新聞。");
+
+break;
+
+case "counter":
+
+if(!inventory.includes("舊文件")){
+
+let hint="櫃檯抽屜被鎖住了，也許先找到相關線索。";
+
+addMemo(hint);
+
+typeWriter(hint);
+
+}else{
+
+typeWriter("文件中提到一把遺失的鑰匙曾被藏在植物附近。");
 
 }
 
-/* =========================
-   重新開始
-========================= */
+break;
 
-function restartButton(){
+case "officeDesk":
 
-    choices.innerHTML =
-    `<button onclick="startGame()">🔄 重新開始</button>`;
+typeWriter("辦公桌上堆著未整理的文件。");
+
+break;
+
+case "water":
+
+typeWriter("飲水機發出低沉運轉聲。");
+
+break;
 
 }
 
-/* =========================
-   啟動
-========================= */
+}
 
-startGame();
+function showInventory(){
+
+let text=`你盤點了身上的物品，總共有「${inventory.length}」項。`;
+
+if(inventory.length){
+
+text+="\n\n分別為：\n";
+
+inventory.forEach(item=>{
+
+text+="• "+item+"\n";
+
+});
+
+}
+
+panelContent.innerText=text;
+
+}
+
+function showMemo(){
+
+if(memos.length===0){
+
+panelContent.innerText="目前沒有備忘錄。";
+
+return;
+
+}
+
+let text="備忘錄：\n\n";
+
+memos.forEach(m=>{
+
+text+="• "+m+"\n\n";
+
+});
+
+panelContent.innerText=text;
+
+}
+
+function restartGame(){
+
+const ok=confirm("確定要重新開始嗎？");
+
+if(!ok) return;
+
+inventory=[];
+
+memos=[];
+
+explored={};
+
+currentScene="study";
+
+panelContent.innerText="歡迎來到圖書館。";
+
+renderScene();
+
+}
+
+renderScene();
 
 </script>
 
