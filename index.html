@@ -1,11 +1,413 @@
-<!doctype html>
-<html>
-  <head>
-    <meta charset = "utf-8">
-    <title>呱呱呱呱</title>
-    <link rel="icon" href="icon.png">
-  </head>
-  <body>
-      hello world
-  </body>
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>校園獎盃失竊事件</title>
+
+<style>
+
+*{
+    box-sizing:border-box;
+}
+
+body{
+    margin:0;
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+
+    background:linear-gradient(
+        135deg,
+        #dbeafe,
+        #f8fafc
+    );
+
+    font-family:"Microsoft JhengHei",sans-serif;
+}
+
+.container{
+    width:90%;
+    max-width:750px;
+
+    background:white;
+
+    padding:35px;
+
+    border-radius:18px;
+
+    box-shadow:
+        0 10px 30px rgba(0,0,0,.15);
+}
+
+h1{
+    text-align:center;
+    color:#1e3a8a;
+    margin-bottom:25px;
+}
+
+#story{
+    min-height:180px;
+
+    font-size:20px;
+
+    line-height:1.8;
+
+    white-space:pre-line;
+
+    margin-bottom:25px;
+}
+
+.buttons{
+    display:flex;
+    flex-wrap:wrap;
+    gap:12px;
+}
+
+button{
+    padding:12px 20px;
+
+    border:none;
+
+    border-radius:10px;
+
+    background:#2563eb;
+
+    color:white;
+
+    font-size:16px;
+
+    cursor:pointer;
+
+    transition:.2s;
+}
+
+button:hover{
+    transform:translateY(-2px);
+    background:#1d4ed8;
+}
+
+.cursor{
+    display:inline-block;
+
+    width:2px;
+    height:22px;
+
+    background:black;
+
+    margin-left:2px;
+
+    animation:blink .8s infinite;
+}
+
+@keyframes blink{
+    50%{
+        opacity:0;
+    }
+}
+
+.good{
+    color:#16a34a;
+    font-weight:bold;
+}
+
+.normal{
+    color:#d97706;
+    font-weight:bold;
+}
+
+.bad{
+    color:#dc2626;
+    font-weight:bold;
+}
+
+.footer{
+    margin-top:20px;
+    font-size:14px;
+    color:#64748b;
+    text-align:center;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>🏆 校園獎盃失竊事件</h1>
+
+<div id="story"></div>
+
+<div id="choices" class="buttons"></div>
+
+<div class="footer">
+互動式小說示範作品
+</div>
+
+</div>
+
+<script>
+
+const story = document.getElementById("story");
+const choices = document.getElementById("choices");
+
+let typing = false;
+
+/* =========================
+   打字機效果
+========================= */
+
+function typeWriter(text, callback = null){
+
+    typing = true;
+
+    story.innerHTML = "";
+
+    let i = 0;
+
+    const timer = setInterval(()=>{
+
+        story.innerHTML =
+            text.substring(0,i+1) +
+            '<span class="cursor"></span>';
+
+        i++;
+
+        if(i >= text.length){
+
+            clearInterval(timer);
+
+            story.innerHTML = text;
+
+            typing = false;
+
+            if(callback){
+                callback();
+            }
+        }
+
+    },30);
+
+}
+
+/* =========================
+   開場
+========================= */
+
+function startGame(){
+
+    choices.innerHTML = "";
+
+    typeWriter(
+`你是學生會成員。
+
+今天早上，社團展示櫃裡的冠軍獎盃突然失蹤了。
+
+老師要求你在放學前找出真相。
+
+你決定先去哪裡調查？`,
+    ()=>{
+        choices.innerHTML = `
+            <button onclick="library()">📚 前往圖書館</button>
+            <button onclick="gym()">🏀 前往體育館</button>
+        `;
+    });
+
+}
+
+/* =========================
+   圖書館路線
+========================= */
+
+function library(){
+
+    choices.innerHTML = "";
+
+    typeWriter(
+`你來到圖書館。
+
+管理員表示：
+
+「昨天下午有個學生在展示櫃附近徘徊很久。」
+
+你打算怎麼調查？`,
+    ()=>{
+        choices.innerHTML = `
+            <button onclick="camera()">📹 檢查監視器</button>
+            <button onclick="bookshelf()">📖 搜尋書架</button>
+        `;
+    });
+
+}
+
+/* =========================
+   體育館路線
+========================= */
+
+function gym(){
+
+    choices.innerHTML = "";
+
+    typeWriter(
+`你來到體育館。
+
+籃球隊剛結束訓練。
+
+有人說昨天看到老師拿著獎盃經過。
+
+你要怎麼調查？`,
+    ()=>{
+        choices.innerHTML = `
+            <button onclick="captain()">🗣 詢問隊長</button>
+            <button onclick="locker()">🔒 查看置物櫃</button>
+        `;
+    });
+
+}
+
+/* =========================
+   結局
+========================= */
+
+function camera(){
+
+    choices.innerHTML = "";
+
+    typeWriter(
+`【好結局】
+
+監視器顯示：
+
+獎盃其實被拿去清潔保養。
+
+清潔完成後順利歸還。
+
+事件成功解決！`,
+    ()=>{
+        story.innerHTML =
+        `<span class="good">【好結局】</span>
+
+監視器顯示：
+
+獎盃其實被拿去清潔保養。
+
+清潔完成後順利歸還。
+
+事件成功解決！`;
+
+        restartButton();
+    });
+
+}
+
+function bookshelf(){
+
+    choices.innerHTML = "";
+
+    typeWriter(
+`【壞結局】
+
+你花了整個下午翻遍書架。
+
+可惜沒有任何線索。
+
+放學鐘聲響起，
+調查失敗。`,
+    ()=>{
+        story.innerHTML =
+        `<span class="bad">【壞結局】</span>
+
+你花了整個下午翻遍書架。
+
+可惜沒有任何線索。
+
+放學鐘聲響起，
+調查失敗。`;
+
+        restartButton();
+    });
+
+}
+
+function captain(){
+
+    choices.innerHTML = "";
+
+    typeWriter(
+`【普通結局】
+
+隊長提供了不少情報。
+
+雖然沒找到獎盃，
+但成功鎖定嫌疑人。
+
+後續交由老師處理。`,
+    ()=>{
+        story.innerHTML =
+        `<span class="normal">【普通結局】</span>
+
+隊長提供了不少情報。
+
+雖然沒找到獎盃，
+但成功鎖定嫌疑人。
+
+後續交由老師處理。`;
+
+        restartButton();
+    });
+
+}
+
+function locker(){
+
+    choices.innerHTML = "";
+
+    typeWriter(
+`【好結局】
+
+你在置物櫃找到獎盃。
+
+原來老師怕獎盃被碰撞損壞，
+暫時移到安全位置保管。
+
+真相大白！`,
+    ()=>{
+        story.innerHTML =
+        `<span class="good">【好結局】</span>
+
+你在置物櫃找到獎盃。
+
+原來老師怕獎盃被碰撞損壞，
+暫時移到安全位置保管。
+
+真相大白！`;
+
+        restartButton();
+    });
+
+}
+
+/* =========================
+   重新開始
+========================= */
+
+function restartButton(){
+
+    choices.innerHTML =
+    `<button onclick="startGame()">🔄 重新開始</button>`;
+
+}
+
+/* =========================
+   啟動
+========================= */
+
+startGame();
+
+</script>
+
+</body>
 </html>
