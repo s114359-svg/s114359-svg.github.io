@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>校園獎盃失竊事件</title>
+<title>放學後的圖書館</title>
 
 <style>
 
@@ -137,7 +137,7 @@ button:hover{
 
 <div class="container">
 
-<h1>🏆 校園獎盃失竊事件</h1>
+<h1>放學後的圖書館</h1>
 
 <div id="story"></div>
 
@@ -202,13 +202,19 @@ function startGame(){
     choices.innerHTML = "";
 
     typeWriter(
-`你是學生會成員。
+`一個平平無奇的下午，
 
-今天早上，社團展示櫃裡的冠軍獎盃突然失蹤了。
+你一如往常地到學校圖書館的自習室複習功課，
 
-老師要求你在放學前找出真相。
+涼爽的冷氣，解不出的數學題目，還有你絞盡腦汁還是得不出的答案，
 
-你決定先去哪裡調查？`,
+你揉了揉酸澀的眼睛，
+
+決定暫時放過自己，
+
+闔上書本在桌上趴下，
+
+任由自己墜入夢鄉......`,
     ()=>{
         choices.innerHTML = `
             <button onclick="library()">📚 前往圖書館</button>
