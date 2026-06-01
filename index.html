@@ -167,6 +167,46 @@ const textBox = document.getElementById("text");
 const choiceBox = document.getElementById("choices");
 const panelContent = document.getElementById("panelContent");
 
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+document.addEventListener("click", () => {
+
+    if(audioCtx.state === "suspended"){
+        audioCtx.resume();
+    }
+
+}, { once:true });
+
+let soundCounter = 0;
+
+function playTypeSound(){
+
+    soundCounter++;
+
+    if(soundCounter % 4 !== 0) return;
+
+    const oscillator = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+
+    oscillator.type = "sawtooth";
+    oscillator.frequency.value =
+        50 + Math.random() * 20;
+
+    gainNode.gain.value = 0.05;
+
+    oscillator.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+
+    oscillator.start();
+
+    gainNode.gain.exponentialRampToValueAtTime(
+        0.0001,
+        audioCtx.currentTime + 0.12
+    );
+
+    oscillator.stop(audioCtx.currentTime + 0.12);
+
+}
 let currentScene = "study";
 
 let inventory = [];
@@ -247,22 +287,37 @@ function typeWriter(text){
 
     textBox.innerHTML="";
 
-    let i=0;
+    let i = 0;
 
-    const timer=setInterval(()=>{
+    const timer = setInterval(()=>{
 
-        textBox.innerHTML += text.charAt(i);
+        const char = text.charAt(i);
+
+        textBox.innerHTML += char;
+
+        if(
+            char !== " " &&
+            char !== "\n" &&
+            char !== "，" &&
+            char !== "。" &&
+            char !== "、" &&
+            char !== "：" &&
+            char !== "；" &&
+            char !== "！" &&
+            char !== "？"
+        ){
+            playTypeSound();
+        }
 
         i++;
 
-        if(i>=text.length){
+        if(i >= text.length){
             clearInterval(timer);
         }
 
     },20);
 
 }
-
 function move(scene){
 
     currentScene=scene;
