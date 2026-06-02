@@ -100,6 +100,24 @@ body{
     color:white;
 }
 
+.fadeText{
+
+    animation: fadeText 3s forwards;
+
+}
+
+@keyframes fadeText{
+
+    from{
+        opacity:1;
+    }
+
+    to{
+        opacity:0.1;
+    }
+
+}
+  
 #panelContent{
     line-height:1.8;
     white-space:pre-wrap;
@@ -116,6 +134,63 @@ body{
     font-size:16px;
 }
 
+@keyframes shake {
+
+    0%   { transform: translate(0,0); }
+    20%  { transform: translate(-2px,1px); }
+    40%  { transform: translate(2px,-1px); }
+    60%  { transform: translate(-2px,0); }
+    80%  { transform: translate(2px,1px); }
+    100% { transform: translate(0,0); }
+
+}
+
+.shake{
+    animation: shake 0.15s infinite;
+}
+
+@keyframes shakeWeak {
+
+    0% { transform: translate(0,0); }
+    25% { transform: translate(-1px,1px); }
+    50% { transform: translate(1px,-1px); }
+    75% { transform: translate(-1px,0); }
+    100% { transform: translate(0,0); }
+
+}
+
+@keyframes shakeMedium {
+
+    0% { transform: translate(0,0); }
+    25% { transform: translate(-3px,2px); }
+    50% { transform: translate(3px,-2px); }
+    75% { transform: translate(-2px,1px); }
+    100% { transform: translate(0,0); }
+
+}
+
+@keyframes shakeStrong {
+
+    0% { transform: translate(0,0); }
+    25% { transform: translate(-6px,3px); }
+    50% { transform: translate(6px,-3px); }
+    75% { transform: translate(-4px,2px); }
+    100% { transform: translate(0,0); }
+
+}
+
+.shakeWeak{
+    animation: shakeWeak 1.2s infinite;
+}
+
+.shakeMedium{
+    animation: shakeMedium 0.9s infinite;
+}
+
+.shakeStrong{
+    animation: shakeStrong 0.6s infinite;
+}
+  
 #restartBtn:hover{
     color:#fff;
 }
@@ -179,6 +254,16 @@ document.addEventListener("click", () => {
 
 let soundCounter = 0;
 
+ function fadeTextOut(){
+
+    textBox.classList.remove("fadeText");
+
+    void textBox.offsetWidth;
+
+    textBox.classList.add("fadeText");
+
+} 
+
 function playTypeSound(){
 
     soundCounter++;
@@ -215,6 +300,129 @@ let memos = [];
 
 let explored = {};
 
+let flags = {
+    readOfficeChat:false,
+    borrowCardReturned:false,
+    sunnyDollEvent:false
+};
+
+let hallLoopCount = 0;
+
+flags.hallRopeEvent = false;
+
+flags.hallRopeCleared = false;
+
+let letterState = "";
+
+let sleepCount = 0;
+
+let lostFoundItem = null;
+
+const itemData = {
+
+"生鏽鑰匙":{
+    description:"一把鏽蝕嚴重的舊鑰匙。",
+    readable:false
+},
+
+"手套":{
+    description:"一副清潔用的橡膠手套。",
+    readable:false
+},
+  
+"紙條":{
+    description:"一張被塞進鉛筆盒的紙條。",
+    readable:true,
+
+    content:"一張突然出現在你的鉛筆盒裡的紙條。\n\n「一點微小的祝福和善意就抵過一切詛咒」",
+
+    flag:"read_note"
+},
+
+"信紙":{
+    description:"你親手寫下內容的信紙。",
+    readable:true,
+
+    content:"",
+    flag:"read_letter"
+},
+
+"書籤":{
+    description:"夾在書中的書籤。",
+    readable:true,
+
+    content:
+"一張手工製作的書籤。\n\n上面寫著：\n『願閱讀能帶你離開黑暗。』",
+
+    flag:"read_bookmark"
+},
+
+"一封「情書」":{
+    description:"一封被人藏在書架中的信。",
+    readable:true,
+
+    content:
+"致我最喜歡的人：\n\n如果有一天我消失了，希望你不要來找我。\n\n因為那時候的我，可能已經不是我了。",
+
+    flag:"read_love_letter"
+},
+
+"借書證":{
+    description:"不知道是誰遺落的借書證。",
+    readable:true,
+
+    content:
+"借書證上已經有些褪色。\n\n持有人姓名似乎被刻意塗掉了。",
+
+    flag:"read_library_card"
+},
+
+"泛黃的舊報紙":{
+    description:"年代久遠的報紙。",
+    readable:true,
+
+    content:
+"地方新聞：\n\n『本市高中生離奇失蹤事件仍未有進展。』",
+
+    flag:"read_old_newspaper"
+},
+
+"打火機":{
+    description:"一個普通的金屬打火機。",
+    readable:false
+},
+
+"相片":{
+    description:"放在辦公桌上的照片。",
+    readable:true,
+
+    content:
+"照片裡是幾名學生與圖書館管理員。\n\n其中有一個人的臉被刮花了。",
+
+    flag:"read_photo"
+},
+
+"辦公室鑰匙":{
+    description:"貼著標籤的鑰匙。",
+    readable:true,
+
+    content:
+"標籤上寫著：\n\n『管理室備用鑰匙』",
+
+    flag:"read_office_key"
+},
+
+"晴天娃娃":{
+    description:"不知何時出現在失物招領中的晴天娃娃。",
+    readable:true,
+
+    content:
+"娃娃背後用細小字跡寫著：\n\n『謝謝你幫我還回來。』",
+
+    flag:"read_teruteru"
+}
+};
+
 const scenes = {
 
 study:{
@@ -238,7 +446,9 @@ choices:[
 ["返回自修室",()=>move("study")],
 ["前往廁所",()=>move("toilet")],
 ["前往閱覽室",()=>move("reading")],
-["前往辦公室",()=>move("office")]
+["前往辦公室",()=>move("office")],
+["前往大門",()=>move("gate")],
+["布告欄",()=>explore("noticeBoard")],
 ]
 },
 
@@ -279,19 +489,42 @@ choices:[
 ["飲水機",()=>explore("water")],
 ["返回走廊",()=>move("hall")]
 ]
+},
+
+
+gate:{
+name:"大門",
+
+desc:"圖書館的大門就在眼前。只要推開門，你就會離開這裡。",
+
+choices:[
+["離開圖書館",()=>checkEnding()],
+["返回走廊",()=>move("hall")]
+]
 }
 
 };
 
+let typingTimer = null;
+let typingText = "";
+let typingIndex = 0;
+let typingFinished = true;
+
 function typeWriter(text){
 
-    textBox.innerHTML="";
+    if(typingTimer){
+        clearInterval(typingTimer);
+    }
 
-    let i = 0;
+    typingText = text;
+    typingIndex = 0;
+    typingFinished = false;
 
-    const timer = setInterval(()=>{
+    textBox.innerHTML = "";
 
-        const char = text.charAt(i);
+    typingTimer = setInterval(()=>{
+
+        const char = typingText.charAt(typingIndex);
 
         textBox.innerHTML += char;
 
@@ -309,23 +542,111 @@ function typeWriter(text){
             playTypeSound();
         }
 
-        i++;
+        typingIndex++;
 
-        if(i >= text.length){
-            clearInterval(timer);
+        if(typingIndex >= typingText.length){
+
+            clearInterval(typingTimer);
+
+            typingFinished = true;
         }
 
-    },20);
+    },40);
 
 }
+
+function setShake(level){
+
+    const game = document.getElementById("text");
+
+    game.classList.remove(
+        "shakeWeak",
+        "shakeMedium",
+        "shakeStrong"
+    );
+
+    if(level){
+        game.classList.add(level);
+    }
+
+}
+
+function shakeOnce(){
+
+    const game =
+        document.getElementById("game");
+
+    game.classList.add("shake");
+
+    setTimeout(()=>{
+
+        game.classList.remove("shake");
+
+    },300);
+
+}
+
+document.addEventListener("click",(e)=>{
+
+    if(
+        !typingFinished &&
+        e.target.tagName !== "BUTTON"
+    ){
+
+        clearInterval(typingTimer);
+
+        textBox.innerHTML = typingText;
+
+        typingFinished = true;
+    }
+
+});
+  
 function move(scene){
 
+    if(
+        currentScene==="study" &&
+        scene==="hall"
+    ){
+
+        hallLoopCount++;
+
+    }
+
+    else if(
+        currentScene==="hall" &&
+        scene==="study"
+    ){
+
+        hallLoopCount++;
+
+    }
+
+    else{
+
+        hallLoopCount=0;
+
+    }
+
     currentScene=scene;
+
+    if(
+        hallLoopCount>=6 &&
+        !flags.hallRopeEvent &&
+        !flags.hallRopeCleared
+    ){
+
+        flags.hallRopeEvent=true;
+
+        startRopeEvent();
+
+        return;
+
+    }
 
     renderScene();
 
 }
-
 function renderScene(){
 
     const scene=scenes[currentScene];
@@ -350,6 +671,24 @@ function renderScene(){
 
 }
 
+function createChoiceButtons(options){
+
+    options.forEach(c=>{
+
+        const btn=document.createElement("button");
+
+        btn.className="choice";
+
+        btn.innerText=c[0];
+
+        btn.onclick=c[1];
+
+        choiceBox.appendChild(btn);
+
+    });
+
+}  
+
 function addMemo(text){
 
     if(!memos.includes(text))
@@ -364,23 +703,725 @@ function addItem(item){
 
 }
 
+function obtainItem(item, foundText=""){
+
+    addItem(item);
+
+    let text = "";
+
+    if(foundText){
+        text += foundText + "\n\n";
+    }
+
+    text += "獲得物品：" + item;
+
+    if(
+        itemData[item] &&
+        itemData[item].readable
+    ){
+
+        text += "\n\n要現在查看嗎？";
+
+        typeWriter(text);
+
+        choiceBox.innerHTML = "";
+
+        const yes = document.createElement("button");
+        yes.className = "choice";
+        yes.innerText = "現在查看";
+
+        yes.onclick = ()=>{
+
+            showItem(item);
+
+        };
+
+        const no = document.createElement("button");
+        no.className = "choice";
+        no.innerText = "稍後查看";
+
+        no.onclick = ()=>{
+
+            renderScene();
+
+        };
+
+        choiceBox.appendChild(yes);
+        choiceBox.appendChild(no);
+
+    }else{
+
+        typeWriter(text);
+
+    }
+
+}
+
+function showOfficeDrawerMenu(){
+
+    typeWriter(
+    "抽屜裡堆滿雜物。"
+    );
+
+    choiceBox.innerHTML="";
+
+    createChoiceButtons([
+
+        ["翻找",()=>explore("searchOfficeDrawer")],
+
+        ["闔上",()=>showOfficeDeskMenu()]
+
+    ]);
+
+}
+
+  
+  
+function showPlantMenu(){
+
+    typeWriter("一盆長得不太健康的植物。");
+
+    choiceBox.innerHTML="";
+
+    const options=[
+
+        ["翻找",()=>explore("plantSearch")],
+
+        ["離開",()=>renderScene()]
+
+    ];
+
+    options.forEach(c=>{
+
+        let btn=document.createElement("button");
+
+        btn.className="choice";
+
+        btn.innerText=c[0];
+
+        btn.onclick=c[1];
+
+        choiceBox.appendChild(btn);
+
+    });
+
+}
+
+function showDeskMenu(){
+
+    typeWriter("桌面上放著一些文具與紙張。");
+
+    choiceBox.innerHTML="";
+
+    const options=[
+
+        ["鉛筆盒",()=>explore("pencilCase")],
+
+        ["信紙",()=>explore("letterPaper")],
+
+        ["離開",()=>renderScene()]
+
+    ];
+
+    options.forEach(c=>{
+
+        let btn=document.createElement("button");
+
+        btn.className="choice";
+
+        btn.innerText=c[0];
+
+        btn.onclick=c[1];
+
+        choiceBox.appendChild(btn);
+
+    });
+
+}
+  
+
+function showStallMenu(){
+
+    typeWriter("狹窄的隔間內空無一人。");
+
+    choiceBox.innerHTML="";
+
+    const options=[
+
+        ["馬桶",()=>explore("toiletSeat")],
+
+        ["垃圾桶",()=>explore("trashCan")],
+
+        ["離開",()=>move("toilet")]
+
+    ];
+
+    createChoiceButtons(options);
+
+}
+  
+function showSinkMenu(){
+
+    typeWriter("洗手台前掛著一面鏡子。");
+
+    choiceBox.innerHTML="";
+
+    const options=[
+
+        ["照鏡子",()=>explore("mirror")],
+
+        ["洗手",()=>explore("washHands")],
+
+        ["離開",()=>move("toilet")]
+
+    ];
+
+    createChoiceButtons(options);
+
+}
+
+function showTrashMenu(){
+
+    typeWriter(
+    "角落裡放著一個半滿的垃圾桶。"
+    );
+
+    choiceBox.innerHTML="";
+
+    const options=[
+
+        ["翻找",()=>explore("searchTrash")],
+
+        ["離開",()=>showStallMenu()]
+
+    ];
+
+    createChoiceButtons(options);
+
+}  
+
+function showNoticeBoard(){
+
+    typeWriter(
+    "布告欄上張貼著各種活動海報和圖書館公告。\n\n其中有幾張已經泛黃。"
+    );
+
+    choiceBox.innerHTML="";
+
+    const options=[
+
+        ["查看公告",()=>explore("la")],
+
+        ["離開",()=>move("hall")]
+    
+    ];
+
+    createChoiceButtons(options);
+
+}
+
+function showBookshelfMenu(){
+
+    typeWriter("高大的書架排列在閱覽室四周。");
+
+    choiceBox.innerHTML="";
+
+    createChoiceButtons([
+
+        ["書籍一",()=>explore("book1")],
+
+        ["書籍二",()=>explore("book2")],
+
+        ["離開",()=>move("reading")]
+
+    ]);
+
+}
+
+function showSofaMenu(){
+
+    typeWriter("柔軟的沙發靜靜擺在角落。");
+
+    choiceBox.innerHTML="";
+
+    createChoiceButtons([
+
+        ["查看縫隙",()=>explore("sofaGap")],
+
+        ["睡覺",()=>explore("sleep1")],
+
+        ["離開",()=>move("reading")]
+
+    ]);
+
+}
+
+function showMagazineMenu(){
+
+    typeWriter(
+    "角落堆放著許多舊報紙與雜誌。"
+    );
+
+    choiceBox.innerHTML="";
+
+    createChoiceButtons([
+
+        ["翻找",()=>explore("searchMagazine")],
+
+        ["離開",()=>move("reading")]
+
+    ]);
+
+}
+
+function showCounterMenu(){
+
+    typeWriter(
+    "櫃檯上放著一個電腦，檯面還擺了幾個小公仔。"
+    );
+
+    choiceBox.innerHTML="";
+
+    createChoiceButtons([
+
+        ["電腦",()=>explore("computer")],
+
+        ["抽屜",()=>explore("drawer")],
+
+        ["失物招領",()=>explore("lostFound")],
+
+        ["離開",()=>move("reading")]
+
+    ]);
+
+}
+
+function showComputerMenu(){
+
+    typeWriter(
+    "電腦開著學校圖書館的網頁。"
+    );
+
+    choiceBox.innerHTML="";
+
+    createChoiceButtons([
+
+        ["查閱借閱紀錄",()=>explore("computerSearch")],
+
+        ["查看時間",()=>explore("computerTime")],
+
+        ["離開",()=>showCounterMenu()]
+
+    ]);
+
+}
+
+function showDrawerMenu(){
+
+    typeWriter(
+    "木製抽屜微微敞開。"
+    );
+
+    choiceBox.innerHTML="";
+
+    createChoiceButtons([
+
+        ["翻找",()=>explore("searchDrawer")],
+
+        ["離開",()=>showCounterMenu()]
+
+    ]);
+
+}
+
+function showLostFoundMenu(){
+
+    if(
+        flags.readOfficeChat &&
+        flags.borrowCardReturned &&
+        !flags.sunnyDollEvent
+    ){
+
+        flags.sunnyDollEvent = true;
+
+        obtainItem(
+            "晴天娃娃",
+            "你打開抽屜。\n\n原本放著借書證的位置出現了一個晴天娃娃。"
+        );
+
+        return;
+    }
+
+    let text="一個標示著『失物招領』的抽屜。";
+
+    if(lostFoundItem){
+
+        text +=
+        "\n\n裡面目前放著：" +
+        lostFoundItem;
+    }
+
+    typeWriter(text);
+
+    choiceBox.innerHTML="";
+
+    const options = [
+
+        ["翻找",()=>explore("searchLostFound")],
+
+        ["放入東西",()=>explore("putLostFound")]
+
+    ];
+
+    if(lostFoundItem){
+
+        options.push(
+            ["取回物品",()=>takeLostFoundItem()]
+        );
+    }
+
+    options.push(
+        ["闔上抽屜",()=>closeLostFound()]
+    );
+
+    createChoiceButtons(options);
+}
+function showPutItemMenu(){
+
+    typeWriter(
+    "要放入哪個物品？"
+    );
+
+    choiceBox.innerHTML="";
+
+    inventory.forEach(item=>{
+
+        const btn=document.createElement("button");
+
+        btn.className="choice";
+
+        btn.innerText=item;
+
+        btn.onclick=()=>{
+
+            lostFoundItem=item;
+
+            if(item==="借書證"){
+    flags.borrowCardReturned=true;
+}
+
+            inventory=
+            inventory.filter(i=>i!==item);
+
+            showStoredItem();
+
+        };
+
+        choiceBox.appendChild(btn);
+
+    });
+
+}
+
+function showStoredItem(){
+
+    typeWriter(
+    "你將物品放進失物招領抽屜。\n\n目前存放："+
+    lostFoundItem
+    );
+
+    choiceBox.innerHTML="";
+
+    createChoiceButtons([
+
+        ["把東西拿出來",()=>takeLostFoundItem()],
+
+        ["闔上抽屜",()=>showCounterMenu()]
+
+    ]);
+
+}
+
+function takeLostFoundItem(){
+
+    if(!lostFoundItem) return;
+
+    const item = lostFoundItem;
+
+    if(item==="借書證"){
+        flags.borrowCardReturned = false;
+    }
+
+    inventory.push(item);
+
+    lostFoundItem = null;
+
+    typeWriter(
+        "你從失物招領抽屜中取回了「" +
+        item +
+        "」。"
+    );
+
+    choiceBox.innerHTML="";
+
+    createChoiceButtons([
+
+        ["繼續查看抽屜",()=>showLostFoundMenu()],
+
+        ["離開",()=>showCounterMenu()]
+
+    ]);
+
+}
+function showWaterMenu(){
+
+    typeWriter(
+    "飲水機發出低沉的運轉聲。"
+    );
+
+    choiceBox.innerHTML="";
+
+    createChoiceButtons([
+
+        ["出水",()=>explore("getWater")],
+
+        ["離開",()=>move("office")]
+
+    ]);
+
+}
+
+function showOfficeDeskMenu(){
+
+    typeWriter(
+    "辦公桌上堆放著各種文件。"
+    );
+
+    choiceBox.innerHTML="";
+
+    createChoiceButtons([
+
+        ["拉開抽屜",()=>explore("officeDrawer")],
+
+        ["打開電腦",()=>explore("officeComputer")],
+
+        ["桌面",()=>explore("officeDesktop")],
+
+        ["離開",()=>move("office")]
+
+    ]);
+
+}
+
+function showOfficeComputerMenu(){
+
+    typeWriter(
+    "電腦螢幕緩緩亮起。"
+    );
+
+    choiceBox.innerHTML="";
+
+    createChoiceButtons([
+
+        ["查看時間",()=>explore("officeTime")],
+
+        ["查看檔案",()=>explore("officeFiles")],
+
+        ["查看聊天紀錄",()=>explore("officeChat")],
+
+        ["關閉電腦",()=>showOfficeDeskMenu()]
+
+    ]);
+
+}
+
+function showOfficeDesktopMenu(){
+
+    typeWriter(
+    "桌面上擺著幾樣物品。"
+    );
+
+    choiceBox.innerHTML="";
+
+    createChoiceButtons([
+
+        ["拿走相片",()=>explore("takePhoto")],
+
+        ["拿走鑰匙",()=>explore("takeOfficeKey")],
+
+        ["離開",()=>showOfficeDeskMenu()]
+
+    ]);
+
+}
+
+function closeLostFound(){
+
+    if(
+        flags.readOfficeChat &&
+        flags.borrowCardReturned &&
+        !flags.sunnyDollEvent
+    ){
+
+        flags.sunnyDollEvent = true;
+
+        obtainItem(
+            "晴天娃娃",
+            "你正準備關上抽屜。\n\n忽然感覺背後吹過一陣冷風。\n\n再次低頭時，抽屜裡已經多出了一個晴天娃娃。"
+        );
+
+        return;
+    }
+
+    showCounterMenu();
+
+}
+
+function startRopeEvent(){
+
+    textBox.style.color="#aa4444";
+
+    choiceBox.innerHTML="";
+
+    typeWriter(
+"你再次踏進走廊。\n\n" +
+"頭頂突然傳來繩索摩擦聲。\n\n" +
+"你抬起頭。\n\n" +
+"天花板不知何時垂下了一條斷裂的繩索。\n\n" +
+"它輕輕晃動著。"
+    );
+    shakeOnce();
+    setShake("shakeStrong");
+    createChoiceButtons([
+
+        ["掙扎",()=>ropeStage2()],
+
+        ["沉淪",()=>ropeDeath()]
+
+    ]);
+
+}
+
+function ropeStage2(){
+
+    choiceBox.innerHTML="";
+
+    setShake("shakeMedium");
+    textBox.style.color="#995555";
+    typeWriter(
+"耳邊傳來細微的低語。\n\n" +
+"腳步聲逐漸遠去。\n\n" +
+"你開始懷疑自己是否真的存在。"
+    );
+
+    createChoiceButtons([
+
+        ["掙扎",()=>ropeStage3()],
+
+        ["沉淪",()=>ropeDeath()]
+
+    ]);
+
+}
+
+function ropeStage3(){
+
+    setShake("shakeWeak");
+
+    fadeTextOut();
+
+    typeWriter(
+        "視線開始模糊。\n\n" +
+        "走廊變得漫長而扭曲。\n\n" +
+        "你幾乎無法呼吸。"
+    );
+
+    createChoiceButtons([
+
+        ["掙扎",()=>ropeFinal()]
+
+    ]);
+
+}
+
+function ropeFinal(){
+
+    choiceBox.innerHTML="";
+
+    if(
+        inventory.includes("晴天娃娃")
+    ){
+        setShake(null);
+        typeWriter(
+"你的手碰到了口袋中的某個東西。\n\n" +
+"那個晴天娃娃傳來微弱的溫度。"
+        );
+        
+        createChoiceButtons([
+
+            ["拿出晴天娃娃",()=>ropeSurvive()]
+
+        ]);
+
+    }
+
+    else{
+        document.body.style.background="#000";
+textBox.style.opacity="0";
+        setShake(null);
+        ropeDeath();
+
+    }
+
+}
+
+function ropeSurvive(){
+
+    flags.hallRopeCleared=true;
+
+    textBox.style.color="#ddd";
+
+    typeWriter(
+"你拿出晴天娃娃。\n\n" +
+"娃娃背後的字跡微微發亮。\n\n" +
+"『謝謝你幫我還回來。』\n\n" +
+"下一秒，所有幻覺煙消雲散。"
+    );
+
+    choiceBox.innerHTML="";
+
+    createChoiceButtons([
+
+        ["返回走廊",()=>move("hall")]
+
+    ]);
+
+}
+  
 function explore(id){
 
 switch(id){
 
 case "plant":
 
+showPlantMenu();
+
+break;
+
+case "plantSearch":
+
 if(!explored.plant){
 
-explored.plant=true;
+    explored.plant=true;
 
-addItem("生鏽鑰匙");
-
-typeWriter("盆栽泥土有被翻動的痕跡，你找到了一把生鏽鑰匙。");
+    obtainItem(
+        "生鏽鑰匙",
+        "盆栽泥土有被翻動的痕跡，你找到了一把生鏽鑰匙。"
+    );
 
 }else{
 
-typeWriter("盆栽已經被你仔細翻找過了。");
+    typeWriter("盆栽已經被你仔細翻找過了。");
 
 }
 
@@ -388,16 +1429,67 @@ break;
 
 case "desk":
 
-typeWriter("桌面上殘留著鉛筆痕跡與一張借閱單。");
+showDeskMenu();
 
 break;
 
+case "pencilCase":
+
+if(!explored.pencilCase){
+
+    explored.pencilCase=true;
+
+    obtainItem(
+        "紙條",
+        "你打開鉛筆盒，發現裡面多出一張陌生紙條。"
+    );
+
+}else{
+
+    typeWriter("鉛筆盒裡已經沒有其他東西。");
+
+}
+
+break;
+
+case "letterPaper":
+
+startLetterWriting();
+
+break;
+
+case "noticeBoard":
+
+showNoticeBoard();
+
+break;
+
+case "la":
+
+typeWriter(
+"1.請勿在沙發上睡覺。\n\n2.書籍歸還手續：將書");
+
+break;
+    
 case "stall":
 
-typeWriter("隔間裡沒有任何人。");
+showStallMenu();
 
 break;
 
+case "toiletSeat":
+
+typeWriter(
+"看起來只是普通的馬桶。\n\n你沒有發現任何異常，希望等下不會有一隻手從裡面伸出來，然後把你拽進去。");
+
+break;
+
+case "trashCan":
+
+showTrashMenu();
+
+break;
+    
 case "storage":
 
 if(!inventory.includes("生鏽鑰匙")){
@@ -414,11 +1506,12 @@ if(!explored.storage){
 
 explored.storage=true;
 
-addItem("舊文件");
 
-typeWriter("你用鑰匙打開工具間，找到了一份舊文件。");
+obtainItem("手套","你在一個水桶裡找到一雙手套。");
 
-}else{
+  
+}
+else{
 
 typeWriter("工具間空空如也。");
 
@@ -430,55 +1523,333 @@ break;
 
 case "sink":
 
-typeWriter("洗手台反射著蒼白燈光。");
+showSinkMenu();
+
+break;
+
+case "mirror":
+
+typeWriter(
+"或許是過於疲憊，你恍惚看見鏡中的人朝你咧起嘴角。"
+);
+
+break;
+    
+case "washHands":
+
+typeWriter(
+"冰冷的水流沖過手掌。\n\n你稍微清醒了一些。"
+);
+
+break;
+
+case "searchTrash":
+
+typeWriter(
+"你翻找了一會兒。\n\n只有紙團與飲料空瓶。"
+);
 
 break;
 
 case "bookshelf":
 
-typeWriter("書架上陳列著各種舊書。");
+showBookshelfMenu();
+
+break;
+
+case "book1":
+
+if(!explored.book1){
+
+    explored.book1=true;
+
+    obtainItem(
+        "書籤",
+        "你翻開書本，在書頁中發現了一個書籤。"
+    );
+
+}else{
+
+    typeWriter("書頁中已經沒有其他東西。");
+
+}
+
+break;
+
+case "book2":
+
+if(!explored.book2){
+
+    explored.book2=true;
+
+    obtainItem(
+        "一封「情書」",
+        "你抽出一本書，一封信從兩書間飄落，你彎下腰拾起信封。"
+    );
+
+}else{
+
+    typeWriter("書架之間只剩下厚重的書本。");
+
+}
 
 break;
 
 case "sofa":
 
-typeWriter("沙發上有被人坐過的痕跡。");
+showSofaMenu();
 
 break;
 
+case "sofaGap":
+
+if(!explored.sofaGap){
+
+    explored.sofaGap=true;
+
+    obtainItem(
+        "借書證",
+        "你伸手摸進沙發縫隙，摸到一張薄薄的卡片。\n\n你用指尖夾起卡片，想將它抽出，卻感覺卡片另一端傳來一陣拉力。\n\n你嚇得鬆手，卡片掉落在地板，驚嚇間你看見一個黑影鑽回縫隙。"
+    );
+
+}else{
+
+    typeWriter("別看了，裡面甚麼都沒有。");
+
+}
+
+break;
+
+case "sleep1":
+
+sleepCount = 1;
+
+showSleepStage1();
+
+break;  
+
 case "magazine":
 
-typeWriter("幾份過期報紙記錄著數年前的新聞。");
+showMagazineMenu();
+
+break;
+
+case "searchMagazine":
+
+if(!explored.oldPaper){
+
+    explored.oldPaper=true;
+
+    obtainItem(
+        "泛黃的舊報紙",
+        "你從報紙堆中抽出一份泛黃的舊報紙。"
+    );
+
+}else{
+
+    typeWriter("剩下的報紙沒有值得注意的內容。");
+
+}
 
 break;
 
 case "counter":
 
-if(!inventory.includes("舊文件")){
+showCounterMenu();
 
-let hint="櫃檯抽屜被鎖住了，也許先找到相關線索。";
+break;
 
-addMemo(hint);
+case "computer":
 
-typeWriter(hint);
+showComputerMenu();
+
+break;
+
+case "computerSearch":
+
+typeWriter(
+"你點進了借閱紀錄查詢。"
+);
+
+break;
+
+case "computerTime":
+
+typeWriter(
+"螢幕右下角顯示：\n\n18:47"
+);
+
+break;
+
+case "drawer":
+
+showDrawerMenu();
+
+break;
+
+case "searchDrawer":
+
+typeWriter(
+"抽屜裡有借閱紀錄與空白表單。\n\n暫時沒有發現特殊物品。"
+);
+
+break;
+
+case "lostFound":
+
+showLostFoundMenu();
+
+break;
+
+case "searchLostFound":
+
+if(lostFoundItem){
+
+    typeWriter(
+    "裡面放著：" +
+    lostFoundItem
+    );
 
 }else{
 
-typeWriter("文件中提到一把遺失的鑰匙曾被藏在植物附近。");
+    typeWriter(
+    "裡面目前空空如也。"
+    );
 
 }
+
+break;
+
+case "putLostFound":
+
+showPutItemMenu();
 
 break;
 
 case "officeDesk":
 
-typeWriter("辦公桌上堆著未整理的文件。");
+showOfficeDeskMenu();
+
+break;
+
+case "officeDrawer":
+
+showOfficeDrawerMenu();
+
+break;
+
+case "searchOfficeDrawer":
+
+if(!explored.officeDrawer){
+
+    explored.officeDrawer=true;
+
+    obtainItem(
+        "打火機",
+        "你在抽屜深處找到一個打火機。"
+    );
+
+}else{
+
+    typeWriter(
+    "抽屜已經被你翻遍了。"
+    );
+
+}
+
+break;
+
+case "officeComputer":
+
+showOfficeComputerMenu();
+
+break;
+
+case "officeTime":
+
+typeWriter(
+"系統時間顯示：\n\n18:53"
+);
+
+break;
+
+case "officeFiles":
+
+typeWriter(
+"資料夾內有大量借閱紀錄。\n\n其中部分檔案被加密。"
+);
+
+break;
+
+case "officeChat":
+    
+flags.readOfficeChat = true;
+    
+typeWriter(
+"最後一則訊息：\n\n『不要讓學生留到閉館後。』"
+);
+
+break;
+
+case "officeDesktop":
+
+showOfficeDesktopMenu();
+
+break;
+
+case "takePhoto":
+
+if(!explored.photo){
+
+    explored.photo=true;
+
+    obtainItem(
+        "相片",
+        "你將桌上的相片收進口袋。"
+    );
+
+}else{
+
+    typeWriter(
+    "桌面上已經沒有相片了。"
+    );
+
+}
+
+break;
+
+case "takeOfficeKey":
+
+if(!explored.officeKey){
+
+    explored.officeKey=true;
+
+    obtainItem(
+        "辦公室鑰匙",
+        "你拿走了桌上的鑰匙。"
+    );
+
+}else{
+
+    typeWriter(
+    "鑰匙已經被你拿走了。"
+    );
+
+}
 
 break;
 
 case "water":
 
-typeWriter("飲水機發出低沉運轉聲。");
+showWaterMenu();
+
+break;
+
+case "getWater":
+
+typeWriter(
+"你按下開關。\n\n冰冷的水流進接水盤裡。"
+);
 
 break;
 
@@ -486,25 +1857,356 @@ break;
 
 }
 
+function startLetterWriting(){
+
+    letterState="";
+
+    chooseLetterPart1();
+
+}
+
+function chooseLetterPart1(){
+
+    typeWriter("信的開頭要寫什麼？");
+
+    choiceBox.innerHTML="";
+
+    addLetterChoice("親愛的朋友",1,chooseLetterPart2);
+
+    addLetterChoice("我一直想告訴你",2,chooseLetterPart2);
+
+}
+
+function chooseLetterPart2(){
+
+    typeWriter("接下來呢？");
+
+    choiceBox.innerHTML="";
+
+    addLetterChoice("謝謝你的陪伴",1,chooseLetterPart3);
+
+    addLetterChoice("其實我很害怕",2,chooseLetterPart3);
+
+}
+
+function chooseLetterPart3(){
+
+    typeWriter("最後寫下什麼？");
+
+    choiceBox.innerHTML="";
+
+    addLetterChoice("希望還能再見",1,finishLetter);
+
+    addLetterChoice("請不要忘記我",2,finishLetter);
+
+}
+
+function addLetterChoice(text,id,next){
+
+    let btn=document.createElement("button");
+
+    btn.className="choice";
+
+    btn.innerText=text;
+
+    btn.onclick=()=>{
+
+        letterState+=id;
+
+        next();
+
+    };
+
+    choiceBox.appendChild(btn);
+
+}
+
+function finishLetter(){
+
+    let content = generateLetterContent();
+
+    itemData["信紙"].content = content;
+
+    obtainItem(
+        "信紙",
+        "你完成了一封信。"
+    );
+
+}
+
+function generateLetterContent(){
+
+    const map={
+
+        "1":"親愛的朋友",
+
+        "2":"我一直想告訴你"
+
+    };
+
+    let text="";
+
+    switch(letterState[0]){
+
+        case "1":
+            text+="親愛的朋友\n\n";
+            break;
+
+        case "2":
+            text+="我一直想告訴你\n\n";
+            break;
+    }
+
+    switch(letterState[1]){
+
+        case "1":
+            text+="謝謝你的陪伴。\n\n";
+            break;
+
+        case "2":
+            text+="其實我很害怕。\n\n";
+            break;
+    }
+
+    switch(letterState[2]){
+
+        case "1":
+            text+="希望還能再見。";
+            break;
+
+        case "2":
+            text+="請不要忘記我。";
+            break;
+    }
+
+    flags["letter_"+letterState]=true;
+
+    return text;
+
+}
+
+function showSleepStage1(){
+
+    textBox.style.color="#aa4444";
+
+    typeWriter(
+    "你靠在沙發上閉上雙眼。\n\n周圍的聲音逐漸遠去。"
+    );
+
+    choiceBox.innerHTML="";
+
+    let btn=document.createElement("button");
+
+    btn.className="choice";
+
+    btn.style.color="#aa4444";
+
+    btn.innerText="繼續睡覺";
+
+    btn.onclick=()=>{
+
+        showSleepStage2();
+
+    };
+
+    choiceBox.appendChild(btn);
+
+}
+
+function showSleepStage2(){
+
+    sleepCount = 2;
+
+    textBox.style.color="#aa4444";
+
+    typeWriter(
+    "你感覺身體越來越沉重。\n\n彷彿有什麼東西正在注視著你。\n\n你嘗試翻身，卻感覺自己動彈不得。\n\n身軀逐漸陷入柔軟的沙發，你感覺周圍的空間越發狹窄。"
+    );
+
+    choiceBox.innerHTML="";
+
+    let btn=document.createElement("button");
+
+    btn.className="choice";
+
+    btn.style.color="#aa4444";
+
+    btn.innerText="繼續睡覺";
+
+    btn.onclick=()=>{
+
+        showSleepStage3();
+
+    };
+
+    choiceBox.appendChild(btn);
+
+}
+
+function showSleepStage3(){
+
+    sleepCount = 3;
+
+    textBox.style.color="#aa4444";
+
+    typeWriter(
+    "你的身體徹底被「沙發」包裹，意識像是沉入深海一樣無法清醒。\n\n你再也醒不來了。"
+    );
+
+    choiceBox.innerHTML="";
+
+    let btn=document.createElement("button");
+
+    btn.className="choice";
+
+    btn.style.color="#aa4444";
+
+    btn.innerText="繼續睡覺";
+
+    btn.onclick=()=>{
+
+        showSleepEnding();
+
+    };
+
+    choiceBox.appendChild(btn);
+
+}
+  
+function showSleepEnding(){
+
+    textBox.style.color="#ff4444";
+
+    choiceBox.innerHTML="";
+
+    typeWriter(
+    "你被沙發吞噬，永遠的陷入安眠，再也無法感受到任何事物，僅僅是存在著而已。"
+    );
+
+    setTimeout(()=>{
+
+        textBox.innerHTML +=
+        "\n\n【結局：年輕真好，倒頭就睡】";
+
+    },1000);
+
+}
+
+function ropeDeath(){
+
+    showEnding(
+
+        "晴天娃娃",
+
+        "你停止了掙扎。\n\n" +
+        "斷裂的繩索緩緩收緊。\n\n" +
+        "黑暗吞沒了一切。"
+
+    );
+
+}
+
+function showEnding(title,text){
+
+    textBox.style.color="#ff4444";
+
+    choiceBox.innerHTML="";
+
+    typeWriter(text);
+
+    setTimeout(()=>{
+
+        textBox.innerHTML +=
+        "\n\n【結局："+title+"】";
+
+    },2500);
+
+}
+  
 function showInventory(){
 
-let text=`你盤點了身上的物品，總共有「${inventory.length}」項。`;
+    panelContent.innerHTML="";
 
-if(inventory.length){
+    let header=document.createElement("div");
 
-text+="\n\n分別為：\n";
+    header.innerText=
+    `你盤點了身上的物品，總共有「${inventory.length}」項。`;
 
-inventory.forEach(item=>{
+    panelContent.appendChild(header);
 
-text+="• "+item+"\n";
+    if(inventory.length===0)
+        return;
 
-});
+    let list=document.createElement("div");
+
+    list.style.marginTop="15px";
+
+    inventory.forEach(item=>{
+
+        let btn=document.createElement("button");
+
+        btn.className="side-btn";
+
+        btn.innerText=item;
+
+        btn.onclick=()=>showItem(item);
+
+        list.appendChild(btn);
+
+        list.appendChild(document.createElement("br"));
+
+    });
+
+    panelContent.appendChild(list);
+}
+function showItem(item){
+
+    const data=itemData[item];
+
+    let text=
+    item +
+    "\n\n" +
+    data.description;
+
+    panelContent.innerText=text;
+
+    if(data.readable){
+
+        let btn=document.createElement("button");
+
+        btn.className="side-btn";
+
+        btn.innerText="查看內容";
+
+        btn.onclick=()=>readItem(item);
+
+        panelContent.appendChild(
+            document.createElement("br")
+        );
+
+        panelContent.appendChild(
+            document.createElement("br")
+        );
+
+        panelContent.appendChild(btn);
+
+    }
+
+}
+  function readItem(item){
+
+    const data=itemData[item];
+
+    panelContent.innerText=data.content;
+
+    if(data.flag){
+
+        flags[data.flag]=true;
+
+    }
 
 }
 
-panelContent.innerText=text;
-
-}
 
 function showMemo(){
 
@@ -540,7 +2242,20 @@ memos=[];
 
 explored={};
 
+flags = {
+    readOfficeChat:false,
+    borrowCardReturned:false,
+    sunnyDollEvent:false
+};
+
+letterState = "";
+sleepCount = 0;
+
+lostFoundItem = null;
+
 currentScene="study";
+
+textBox.style.color="#ddd";
 
 panelContent.innerText="歡迎來到圖書館。";
 
