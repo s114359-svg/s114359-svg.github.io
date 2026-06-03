@@ -1780,7 +1780,14 @@ function inputArchivePassword(){
 
         flags.archiveUnlocked = true;
 
-        enterArchiveRoom(); // 直接進去
+        typeWriter("電子鎖發出『嗶』的一聲。\n\n資料室已解鎖。");
+
+        choiceBox.innerHTML = "";
+
+        createChoiceButtons([
+            ["進入資料室", ()=>enterArchiveRoom()],
+            ["返回樓梯間", ()=>showStairMenu()]
+        ]);
 
     }else{
 
@@ -1788,9 +1795,7 @@ function inputArchivePassword(){
 
     }
 
-
 }
-
 function checkArchivePassword(){
 
     const code =
