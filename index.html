@@ -2,7 +2,10 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport"
+      content="width=device-width,
+               initial-scale=1,
+               maximum-scale=1">
 
 <title>放學後的圖書館</title>
 
@@ -46,6 +49,10 @@ body{
     line-height:2;
     font-size:20px;
     white-space:pre-wrap;
+
+    overflow-y:auto;      /* 超出可捲動 */
+    padding-right:10px;   /* 避免文字貼著捲軸 */
+    min-height:0;         /* flex版面必要 */
 }
 
 #choices{
@@ -73,6 +80,23 @@ body{
     width:320px;
     border-left:1px solid #222;
     padding:30px;
+}
+
+#text::-webkit-scrollbar{
+    width:6px;
+}
+
+#text::-webkit-scrollbar-track{
+    background:transparent;
+}
+
+#text::-webkit-scrollbar-thumb{
+    background:#333;
+    border-radius:20px;
+}
+
+#text::-webkit-scrollbar-thumb:hover{
+    background:#666;
 }
 
 .panel-title{
@@ -194,6 +218,21 @@ body{
 #restartBtn:hover{
     color:#fff;
 }
+
+/* 手機版 */
+
+
+
+    .panel-title{
+        font-size:18px;
+    }
+
+    .side-buttons{
+        display:flex;
+        gap:20px;
+    }
+
+
 </style>
 </head>
 <body>
@@ -294,26 +333,40 @@ function playTypeSound(){
 }
 let currentScene = "study";
 
+let stairFloor = 1;
+
 let inventory = [];
 
 let memos = [];
 
 let explored = {};
 
-let flags = {
+const defaultFlags = {
+
     readOfficeChat:false,
+    libraryCardReturned:false,
+    sunnyDollEvent:false,
+
+    officeBurned:false,
+    officeDeathWarning:false,
+
     borrowCardReturned:false,
-    sunnyDollEvent:false
+    libraryCardReturnedOnce:false,
+
+    hallRopeEvent:false,
+    hallRopeCleared:false,
+    archiveUnlocked:false,
 };
+
+let flags = structuredClone(defaultFlags);
 
 let hallLoopCount = 0;
 
-flags.hallRopeEvent = false;
-
-flags.hallRopeCleared = false;
-
+let currentLetterCode = "";
+  
 let letterState = "";
-
+let officeEnterCount=0;
+let officeDeathClicks=0;
 let sleepCount = 0;
 
 let lostFoundItem = null;
@@ -420,7 +473,17 @@ const itemData = {
 "娃娃背後用細小字跡寫著：\n\n『謝謝你幫我還回來。』",
 
     flag:"read_teruteru"
-}
+},
+
+"染血的鑰匙":{
+    description:"沾著乾涸血跡的鑰匙。",
+    readable:true,
+
+    content:
+"鑰匙表面有著暗紅色污漬。\n\n似乎曾經被人緊緊握在手中。",
+
+    flag:"read_blood_key"
+},
 };
 
 const scenes = {
@@ -446,9 +509,10 @@ choices:[
 ["返回自修室",()=>move("study")],
 ["前往廁所",()=>move("toilet")],
 ["前往閱覽室",()=>move("reading")],
-["前往辦公室",()=>move("office")],
-["前往大門",()=>move("gate")],
+["前往辦公室",()=>enterOffice()],
 ["布告欄",()=>explore("noticeBoard")],
+["樓梯間",()=>enterStair()],
+["前往大門",()=>move("gate")],
 ]
 },
 
@@ -461,6 +525,7 @@ choices:[
 ["廁所隔間",()=>explore("stall")],
 ["工具間",()=>explore("storage")],
 ["洗手台",()=>explore("sink")],
+["廁所公告",()=>explore("toiletNotice")],
 ["返回走廊",()=>move("hall")]
 ]
 },
@@ -527,6 +592,7 @@ function typeWriter(text){
         const char = typingText.charAt(typingIndex);
 
         textBox.innerHTML += char;
+textBox.scrollTop = textBox.scrollHeight;
 
         if(
             char !== " " &&
@@ -555,6 +621,68 @@ function typeWriter(text){
 
 }
 
+function showFadingLine(text,speed=80){
+
+    return new Promise(resolve=>{
+
+        textBox.innerHTML = "";
+        textBox.style.opacity = "1";
+
+        let i = 0;
+
+        const timer = setInterval(()=>{
+
+            textBox.innerHTML += text.charAt(i);
+
+            const char = text.charAt(i);
+
+            if(
+                char !== " " &&
+                char !== "\n" &&
+                char !== "，" &&
+                char !== "。" &&
+                char !== "、" &&
+                char !== "：" &&
+                char !== "；" &&
+                char !== "！" &&
+                char !== "？"
+            ){
+                playTypeSound();
+            }
+
+            i++;
+
+            if(i >= text.length){
+
+                clearInterval(timer);
+
+                // 停留 1.2 秒
+                setTimeout(()=>{
+
+                    textBox.style.transition =
+                        "opacity 3.5s linear";
+
+                    textBox.style.opacity = "0.1";
+
+                    setTimeout(()=>{
+
+                        textBox.style.transition = "";
+                        textBox.style.opacity = "1";
+
+                        resolve();
+
+                    },3500);
+
+                },1200);
+
+            }
+
+        },speed);
+
+    });
+
+}
+  
 function setShake(level){
 
     const game = document.getElementById("text");
@@ -627,7 +755,27 @@ function move(scene){
         hallLoopCount=0;
 
     }
+    if(scene==="office"){
 
+    if(
+        !inventory.includes("打火機") &&
+        !flags.officeBurned
+    ){
+
+        officeEnterCount++;
+
+        if(officeEnterCount >= 3){
+
+            flags.officeBurned = true;
+
+            showOfficeFireEvent();
+
+            return;
+        }
+
+    }
+
+}
     currentScene=scene;
 
     if(
@@ -1107,7 +1255,10 @@ function showPutItemMenu(){
             lostFoundItem=item;
 
             if(item==="借書證"){
+
     flags.borrowCardReturned=true;
+    flags.libraryCardReturnedOnce=true;
+
 }
 
             inventory=
@@ -1258,10 +1409,10 @@ function showOfficeDesktopMenu(){
 function closeLostFound(){
 
     if(
-        flags.readOfficeChat &&
-        flags.borrowCardReturned &&
-        !flags.sunnyDollEvent
-    ){
+    flags.readOfficeChat &&
+    flags.libraryCardReturnedOnce &&
+    !flags.sunnyDollEvent
+){
 
         flags.sunnyDollEvent = true;
 
@@ -1274,6 +1425,112 @@ function closeLostFound(){
     }
 
     showCounterMenu();
+
+}
+
+function enterStair(){
+
+    stairFloor = 1;
+
+    showStairMenu();
+
+}
+
+function showStairMenu(){
+
+    let floorName = "";
+
+    switch(stairFloor){
+
+        case 1:
+            floorName = "一樓";
+            break;
+
+        case 2:
+            floorName = "二樓";
+            break;
+
+        case 3:
+            floorName = "三樓";
+            break;
+
+        case 4:
+            floorName = "四樓";
+            break;
+    }
+
+    typeWriter(
+        "你站在樓梯間。\n\n" +
+        "目前位於：" + floorName
+    );
+
+    choiceBox.innerHTML="";
+
+    const options = [];
+
+    // 進入本層
+
+    if(stairFloor===2){
+
+        options.push([
+            "進入資料室",
+            ()=>enterArchiveRoom()
+        ]);
+
+    }
+
+    if(stairFloor===3){
+
+        options.push([
+            "進入校史室",
+            ()=>enterHistoryRoom()
+        ]);
+
+    }
+
+    if(stairFloor===4){
+
+        options.push([
+            "前往頂樓露台",
+            ()=>enterRoof()
+        ]);
+
+    }
+
+    // 上樓
+
+    if(stairFloor < 4){
+
+        options.push([
+            "上樓",
+            ()=>{
+                stairFloor++;
+                showStairMenu();
+            }
+        ]);
+
+    }
+
+    // 下樓
+
+    if(stairFloor > 1){
+
+        options.push([
+            "下樓",
+            ()=>{
+                stairFloor--;
+                showStairMenu();
+            }
+        ]);
+
+    }
+
+    options.push([
+        "離開樓梯間",
+        ()=>move("hall")
+    ]);
+
+    createChoiceButtons(options);
 
 }
 
@@ -1324,22 +1581,31 @@ function ropeStage2(){
 
 }
 
-function ropeStage3(){
+async function ropeStage3(){
+
+    choiceBox.innerHTML = "";
 
     setShake("shakeWeak");
 
-    fadeTextOut();
-
-    typeWriter(
-        "視線開始模糊。\n\n" +
-        "走廊變得漫長而扭曲。\n\n" +
-        "你幾乎無法呼吸。"
+    await showFadingLine(
+        "視線開始模糊。",
+        80
     );
 
+    await showFadingLine(
+        "走廊變得漫長而扭曲。",
+        120
+    );
+
+    await showFadingLine(
+        "你幾乎無法呼吸。",
+        180
+    );
+
+    textBox.innerHTML = "";
+
     createChoiceButtons([
-
         ["掙扎",()=>ropeFinal()]
-
     ]);
 
 }
@@ -1379,13 +1645,19 @@ function ropeSurvive(){
 
     flags.hallRopeCleared=true;
 
+    textBox.classList.remove("fadeText");
+
+    textBox.style.opacity="1";
+
+    textBox.style.transition="";
+
     textBox.style.color="#ddd";
 
     typeWriter(
-"你拿出晴天娃娃。\n\n" +
-"娃娃背後的字跡微微發亮。\n\n" +
+"你顫抖地拿出晴天娃娃，它滾落在地。\n\n" +
+"眼前出現了一個模糊的影子。\n\n" +
 "『謝謝你幫我還回來。』\n\n" +
-"下一秒，所有幻覺煙消雲散。"
+"下一秒，所有幻覺煙消雲散，晴天娃娃也不知所蹤。"
     );
 
     choiceBox.innerHTML="";
@@ -1393,6 +1665,162 @@ function ropeSurvive(){
     createChoiceButtons([
 
         ["返回走廊",()=>move("hall")]
+
+    ]);
+
+}
+
+function showOfficeFireEvent(){
+
+    typeWriter(
+        "你正準備前往辦公室。\n\n" +
+        "門縫中忽然竄出橘紅色火光。\n\n" +
+        "下一秒，濃煙從門後湧出。\n\n" +
+        "辦公室失火了。"
+    );
+
+    choiceBox.innerHTML="";
+
+    createChoiceButtons([
+
+        ["離開",()=>move("hall")],
+
+        ["執意進入",()=>officeFireWarning()]
+
+    ]);
+
+}
+
+function officeFireWarning(){
+
+    officeDeathClicks++;
+
+    if(officeDeathClicks===1){
+
+        typeWriter(
+            "高溫從門後襲來。\n\n" +
+            "濃煙幾乎讓人無法呼吸。\n\n" +
+            "再往前一步恐怕會沒命。"
+        );
+
+        choiceBox.innerHTML="";
+
+        createChoiceButtons([
+
+            ["離開",()=>move("hall")],
+
+            ["執意進入",()=>officeFireDeath()]
+
+        ]);
+
+        return;
+    }
+
+} 
+
+function enterOffice(){
+
+    if(flags.officeBurned){
+
+        typeWriter(
+            "辦公室已被大火吞沒。\n\n" +
+            "現在根本無法正常進入。"
+        );
+
+        choiceBox.innerHTML="";
+
+        createChoiceButtons([
+
+            ["離開",()=>renderScene()],
+
+            ["執意進入",()=>officeFireWarning()]
+
+        ]);
+
+        return;
+    }
+
+    move("office");
+
+}
+
+function enterArchiveRoom(){
+
+    if(!flags.archiveUnlocked){
+
+        typeWriter(
+            "資料室的大門被電子鎖鎖住。\n\n" +
+            "需要輸入密碼。"
+        );
+
+        choiceBox.innerHTML="";
+
+        createChoiceButtons([
+
+["輸入五位數密碼",()=>inputArchivePassword()],
+
+            ["返回樓梯間",()=>showStairMenu()],
+
+        ]);
+
+        return;
+    }
+
+    typeWriter(
+        "你進入了資料室。"
+    );
+
+}
+
+function inputArchivePassword(){
+
+    const code = prompt("輸入密碼");
+
+    if(code === "12345"){
+
+        flags.archiveUnlocked = true;
+
+        enterArchiveRoom(); // 直接進去
+
+    }else{
+
+        alert("密碼錯誤");
+
+    }
+
+
+}
+
+function checkArchivePassword(){
+
+    const code =
+        document.getElementById("pwd").value;
+
+    if(code === "12345"){
+
+        flags.archiveUnlocked = true;
+
+        typeWriter("電子鎖解除。");
+
+    }else{
+
+        typeWriter("密碼錯誤。");
+
+    }
+}
+
+function enterHistoryRoom(){
+
+    typeWriter(
+        "校史室裡擺放著許多老照片。\n\n" +
+        "目前還沒有更多內容。"
+    );
+
+    choiceBox.innerHTML="";
+
+    createChoiceButtons([
+
+        ["返回樓梯間",()=>showStairMenu()]
 
     ]);
 
@@ -1527,6 +1955,15 @@ showSinkMenu();
 
 break;
 
+case "toiletNotice":
+
+typeWriter(
+"【廁所公告】\n\n" +
+"洗手台水龍頭維修中，請勿使用。"
+);
+
+break;
+
 case "mirror":
 
 typeWriter(
@@ -1545,9 +1982,39 @@ break;
 
 case "searchTrash":
 
-typeWriter(
-"你翻找了一會兒。\n\n只有紙團與飲料空瓶。"
-);
+if(!inventory.includes("手套")){
+
+    const hint =
+    "垃圾桶深處似乎有什麼東西。\n\n" +
+    "但裡面混著不明液體與垃圾。\n\n" +
+    "也許該先找副手套。";
+
+    addMemo("垃圾桶裡似乎有東西，也許需要手套才能翻找。");
+
+    typeWriter(hint);
+
+    break;
+}
+
+if(!explored.trashItem){
+
+    explored.trashItem = true;
+
+    obtainItem(
+        "染血的鑰匙",
+        "戴上手套後，你伸手翻找垃圾桶。\n\n" +
+        "在底部摸到了一把冰冷的鑰匙。"
+    );
+
+}else{
+
+    typeWriter(
+        "垃圾桶已經被你翻遍了。"
+    );
+
+}
+
+break;
 
 break;
 
@@ -1589,7 +2056,7 @@ if(!explored.book2){
 
 }else{
 
-    typeWriter("書架之間只剩下厚重的書本。");
+    typeWriter("書架上除了書什麼都沒有。");
 
 }
 
@@ -1721,6 +2188,15 @@ if(lostFoundItem){
 break;
 
 case "putLostFound":
+
+if(lostFoundItem){
+
+    typeWriter(
+        "抽屜裡已經有東西了。"
+    );
+
+    return;
+}
 
 showPutItemMenu();
 
@@ -1936,6 +2412,15 @@ function finishLetter(){
 
 function generateLetterContent(){
 
+    if(currentLetterCode){
+        flags["letter_"+currentLetterCode] = false;
+    }
+
+    currentLetterCode = letterState;
+
+    flags["letter_"+letterState] = true;
+
+
     const map={
 
         "1":"親愛的朋友",
@@ -2106,7 +2591,27 @@ function ropeDeath(){
 
 }
 
+function officeFireDeath(){
+
+    showEnding(
+
+        "15年前",
+
+        "你推開燃燒的門。\n\n" +
+        "灼熱的火焰瞬間吞噬全身。\n\n" +
+        "濃煙堵住呼吸。\n\n" +
+        "你倒在火海之中。\n\n" +
+        "辦公室裡的東西真的值得你付出生命嗎？"
+    );
+
+}
+
 function showEnding(title,text){
+
+    setShake(null);
+
+    textBox.classList.remove("fadeText");
+    textBox.style.opacity="1";
 
     textBox.style.color="#ff4444";
 
@@ -2230,6 +2735,16 @@ panelContent.innerText=text;
 
 }
 
+function resetTextEffects(){
+
+    textBox.classList.remove("fadeText");
+
+    textBox.style.opacity="1";
+
+    textBox.style.color="#ddd";
+
+}
+  
 function restartGame(){
 
 const ok=confirm("確定要重新開始嗎？");
@@ -2242,18 +2757,20 @@ memos=[];
 
 explored={};
 
-flags = {
-    readOfficeChat:false,
-    borrowCardReturned:false,
-    sunnyDollEvent:false
-};
+flags = structuredClone(defaultFlags);
 
 letterState = "";
 sleepCount = 0;
 
+currentLetterCode = "";
+
 lostFoundItem = null;
 
 currentScene="study";
+
+resetTextEffects();   // ←新增
+
+setShake(null);
 
 textBox.style.color="#ddd";
 
