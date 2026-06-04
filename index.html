@@ -334,7 +334,7 @@ function playTypeSound(){
 let currentScene = "study";
 
 let stairFloor = 1;
-
+let notebookPage = 0;
 let inventory = [];
 
 let memos = [];
@@ -370,7 +370,50 @@ let officeDeathClicks=0;
 let sleepCount = 0;
 
 let lostFoundItem = null;
+const notebookPages = [
 
+`我想幫她。
+
+雖然疾病很難痊癒。
+
+但我希望她能一直快樂。`,
+
+`她最近好像還是不開心。
+
+我是不是讓她有壓力了？`,
+
+`最近她笑的頻率變多了。
+
+或許情況正在好轉。`,
+
+`最近要畢業了。
+
+她看起來悶悶不樂的。
+
+寫封信給她好了。`,
+
+`上家政課的時候火開太大被嚇到。
+
+我聽到她在旁邊偷笑。
+
+火就很恐怖嘛。`,
+
+`上次一起溜去天台被罵了。
+
+我說以後不會了。
+
+其實是以後不會被發現的意思。`,
+
+`啊啊啊啊啊啊啊！
+
+術科和學科都過線了！
+
+藝大我來了！
+
+感謝老師感謝媽媽感謝老天爺。
+
+感謝○○○。`
+];
 const itemData = {
 
 "生鏽鑰匙":{
@@ -431,11 +474,13 @@ content:
 },
 
 "泛黃的舊報紙":{
-    description:"年代久遠的報紙。",
+    description:"十五年前的報紙。",
     readable:true,
 
     content:
-"地方新聞：\n\n『本市高中生離奇失蹤事件仍未有進展。』",
+"200X年6月17日地方新聞：\n\n"+
+"本市高中圖書館於昨日下午發生火災。\n\n"+
+"初步調查顯示起火點位於一樓辦公室，起火原因仍未知。",
 
     flag:"read_old_newspaper"
 },
@@ -522,6 +567,12 @@ content:
 "還是親手交給對方比較好吧？",
 
     flag:"read_note2"
+},
+
+"筆記本":{
+    description:"一本有些磨損的筆記本。",
+    readable:true,
+    flag:"readNotebook"
 },
 };
 
@@ -1451,6 +1502,57 @@ function showOfficeDesktopMenu(){
 
 }
 
+function showOfficeFileLogin(){
+
+    typeWriter(
+        "部分檔案已加密。\n\n需要輸入密碼。"
+    );
+
+    choiceBox.innerHTML="";
+
+    createChoiceButtons([
+
+        ["輸入日期",()=>inputFireDate()],
+
+        ["返回",()=>showOfficeComputerMenu()]
+
+    ]);
+
+}
+
+function inputFireDate(){
+
+    const code = prompt("請輸入密碼");
+
+    if(code==="0617"){
+
+        unlockFireFile();
+
+    }else{
+
+        typeWriter(
+            "密碼錯誤。"
+        );
+
+    }
+
+}
+
+function unlockFireFile(){
+
+    flags.archiveUnlocked = true;
+
+    typeWriter(
+"【火災調查報告】\n\n" +
+"事故日期：6月17日\n\n" +
+"失蹤學生：2人\n\n" +
+"事故原因：不明\n\n" +
+"附註：相關資料已移至資料室保存。\n\n" +
+"資料室編號：61725"
+    );
+
+}
+
 function closeLostFound(){
 
     if(
@@ -2024,6 +2126,93 @@ function enterRoof(){
     ]);
 
 }
+
+function enterArchiveRoom(){
+
+    typeWriter(
+        "灰塵覆蓋著一排排資料櫃。"
+    );
+
+    choiceBox.innerHTML="";
+
+    createChoiceButtons([
+
+        ["學生資料",()=>explore("archiveStudent")],
+
+        ["筆記本",()=>readNotebook()],
+
+        ["返回樓梯間",()=>showStairMenu()]
+
+    ]);
+
+}
+
+function readNotebook(){
+
+    panelContent.innerHTML =
+        notebookPages[notebookPage] +
+        "\n\n（第" +
+        (notebookPage+1) +
+        "頁 / " +
+        notebookPages.length +
+        "頁）";
+
+    const box = document.createElement("div");
+
+    box.style.marginTop = "15px";
+
+    if(notebookPage > 0){
+
+        const prev =
+            document.createElement("button");
+
+        prev.className="side-btn";
+
+        prev.innerText="上一頁";
+
+        prev.onclick=()=>{
+
+            notebookPage--;
+
+            readNotebook();
+
+        };
+
+        box.appendChild(prev);
+
+    }
+
+    if(
+        notebookPage <
+        notebookPages.length-1
+    ){
+
+        const next =
+            document.createElement("button");
+
+        next.className="side-btn";
+
+        next.innerText="下一頁";
+
+        next.onclick=()=>{
+
+            notebookPage++;
+
+            readNotebook();
+
+        };
+
+        box.appendChild(next);
+
+    }
+
+    panelContent.appendChild(
+        document.createElement("br")
+    );
+
+    panelContent.appendChild(box);
+
+}
   
 function explore(id){
 
@@ -2524,12 +2713,9 @@ break;
 
 case "officeFiles":
 
-typeWriter(
-"資料夾內有大量借閱紀錄。\n\n其中部分檔案被加密。"
-);
+showOfficeFileLogin();
 
 break;
-
 case "officeChat":
     
 flags.readOfficeChat = true;
@@ -3170,7 +3356,23 @@ function showItem(item){
 
         btn.innerText="查看內容";
 
-        btn.onclick=()=>readItem(item);
+       btn.onclick=()=>{
+
+    if(item==="筆記本"){
+
+        notebookPage=0;
+
+        readNotebook();
+
+    }
+
+    else{
+
+        readItem(item);
+
+    }
+
+};
 
         panelContent.appendChild(
             document.createElement("br")
@@ -3249,7 +3451,7 @@ flags = structuredClone(defaultFlags);
 letterState = "";
 sleepCount = 0;
 hallLoopCount = 0;
-  
+let notebookPage = 0;
 officeEnterCount=0;
 
 officeDeathClicks=0;
