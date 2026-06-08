@@ -346,7 +346,8 @@ const defaultFlags = {
     readOfficeChat:false,
     libraryCardReturned:false,
     sunnyDollEvent:false,
-
+    graduateLetterDelivered:false, // 已交付畢業信
+    letterBurned:false,      
     officeBurned:false,
     officeDeathWarning:false,
 
@@ -414,6 +415,39 @@ const notebookPages = [
 
 感謝○○○。`
 ];
+
+let photoPage = 0;
+
+const historyPhotos = [
+
+`第15屆畢業生
+
+照片裡的學生們笑得很開心。`,
+
+`第16屆畢業生
+
+角落有個女孩對鏡頭比出奇怪手勢。`,
+
+`第17屆畢業生
+
+你看見一個熟悉的身影。
+
+她站在最後一排。`,
+
+`第18屆畢業生
+
+兩個女孩靠得很近。
+
+其中一人把手搭在另一人的肩膀上。`,
+
+`第19屆畢業生
+
+照片右下角寫著：
+
+「永遠的朋友」`
+
+];
+
 const itemData = {
 
 "生鏽鑰匙":{
@@ -572,8 +606,23 @@ content:
 "筆記本":{
     description:"一本有些磨損的筆記本。",
     readable:true,
+    content:"",
     flag:"readNotebook"
 },
+
+"八音盒":{
+    description:"一個老舊八音盒。",
+    readable:true,
+
+    content:
+"你轉動生鏽的發條。\n\n" +
+"音樂從盒中傳出，中央的小人隨之舞蹈。\n\n"+
+"悠揚舒緩的曲調在房中迴盪。\n\n"+
+"不知為何，你的眼中泛起淚水。",
+
+    flag:"readMusicBox"
+},
+
 };
 
 const scenes = {
@@ -654,7 +703,7 @@ name:"大門",
 desc:"圖書館的大門就在眼前。只要推開門，你就會離開這裡。",
 
 choices:[
-["離開圖書館",()=>checkEnding()],
+["離開圖書館",()=>explore("leaveLibrary")],
 ["返回走廊",()=>move("hall")]
 ]
 }
@@ -1644,6 +1693,8 @@ function showStairMenu(){
 
     }
 
+  
+
     // 上樓
 
     if(stairFloor < 4){
@@ -1669,13 +1720,17 @@ function showStairMenu(){
                 showStairMenu();
             }
         ]);
-
+    
     }
 
-    options.push([
-        "離開樓梯間",
-        ()=>move("hall")
-    ]);
+   if(stairFloor===1){
+
+        options.push([
+            "離開樓梯間",
+            ()=>move("hall")
+        ]);
+
+    }
 
     createChoiceButtons(options);
 
@@ -1813,15 +1868,7 @@ function ropeSurvive(){
 
     createChoiceButtons([
 
-        ["撿起手鍊",()=>{
-
-            obtainItem(
-                "手鍊",
-                "你彎下腰撿起了那條手鍊。"
-            );
-
-        }]
-
+      ["撿起手鍊",()=>explore("takeBracelet")]
     ]);
 
 }
@@ -2005,11 +2052,11 @@ function enterHistoryRoom(){
 
     createChoiceButtons([
 
-        ["照片牆",()=>explore("historyPhotoWall")],
-
-        ["雕像",()=>explore("mannequin")],
-
-        ["展示櫃",()=>explore("historyShowcase")],
+        [
+ ["觀看照片",()=>showPhotoPage()],
+ ["人體模型",()=>explore("mannequin")],
+ ["返回樓梯間",()=>showStairMenu()]
+]
 
         ["返回樓梯間",()=>showStairMenu()]
 
@@ -2068,7 +2115,7 @@ function showBorrowRecord(){
             text =
             "借閱紀錄（3/3）\n\n" +
             "回覆紀錄：\n\n" +
-            "『抱歉，我會提醒她的。』";
+            "「";
         flags.readBorrowRecord = true;
             addMemo(
 "似乎有一本書尚未歸還。"
@@ -2139,7 +2186,7 @@ function enterArchiveRoom(){
 
         ["學生資料",()=>explore("archiveStudent")],
 
-        ["筆記本",()=>readNotebook()],
+        ["筆記本",()=>explore("archiveNotebook")],
 
         ["返回樓梯間",()=>showStairMenu()]
 
@@ -2147,38 +2194,22 @@ function enterArchiveRoom(){
 
 }
 
-function readNotebook(){
+function showNotebookPage(){
 
-    panelContent.innerHTML =
-        notebookPages[notebookPage] +
-        "\n\n（第" +
-        (notebookPage+1) +
-        "頁 / " +
-        notebookPages.length +
-        "頁）";
+    typeWriter(
+        notebookPages[notebookPage]
+    );
 
-    const box = document.createElement("div");
-
-    box.style.marginTop = "15px";
+    choiceBox.innerHTML="";
 
     if(notebookPage > 0){
 
-        const prev =
-            document.createElement("button");
-
-        prev.className="side-btn";
-
-        prev.innerText="上一頁";
-
-        prev.onclick=()=>{
-
-            notebookPage--;
-
-            readNotebook();
-
-        };
-
-        box.appendChild(prev);
+        createChoiceButtons([
+            ["上一頁",()=>{
+                notebookPage--;
+                showNotebookPage();
+            }]
+        ]);
 
     }
 
@@ -2187,30 +2218,212 @@ function readNotebook(){
         notebookPages.length-1
     ){
 
-        const next =
-            document.createElement("button");
-
-        next.className="side-btn";
-
-        next.innerText="下一頁";
-
-        next.onclick=()=>{
-
-            notebookPage++;
-
-            readNotebook();
-
-        };
-
-        box.appendChild(next);
+        createChoiceButtons([
+            ["下一頁",()=>{
+                notebookPage++;
+                showNotebookPage();
+            }]
+        ]);
 
     }
 
-    panelContent.appendChild(
-        document.createElement("br")
+    createChoiceButtons([
+        ["收起筆記本",()=>renderScene()]
+    ]);
+
+}
+
+function showPhotoPage(){
+
+    typeWriter(
+        historyPhotos[photoPage]
     );
 
-    panelContent.appendChild(box);
+    choiceBox.innerHTML="";
+
+    const options = [];
+
+    if(photoPage > 0){
+
+        options.push([
+            "上一張",
+            ()=>{
+
+                photoPage--;
+
+                showPhotoPage();
+
+            }
+        ]);
+
+    }
+
+    if(
+        photoPage <
+        historyPhotos.length-1
+    ){
+
+        options.push([
+            "下一張",
+            ()=>{
+
+                photoPage++;
+
+                showPhotoPage();
+
+            }
+        ]);
+
+    }
+    flags.photoHint = true;
+    options.push([
+        "離開",
+        ()=>enterHistoryRoom()
+    ]);
+
+    createChoiceButtons(options);
+
+}
+    
+
+function giveBracelet(){
+
+    inventory =
+        inventory.filter(
+            i=>i!=="手鍊"
+        );
+
+    obtainItem(
+        "八音盒",
+        "當手鍊扣上的瞬間。\n\n" +
+        "雕塑後方傳來輕微的碰撞聲。\n\n" +
+        "你找到了一個八音盒。"
+    );
+
+}
+
+
+
+function enterHistoryRoom(){
+
+    typeWriter(
+        "校史室裡擺滿了歷屆畢業照片。"
+    );
+
+    choiceBox.innerHTML="";
+
+    createChoiceButtons([
+
+        ["畢業照片",()=>showPhotoPage()],
+
+        ["雕像",()=>explore("mannequin")],
+
+        ["返回樓梯間",()=>showStairMenu()]
+
+    ]);
+
+}
+
+function showRoofGirl(){
+
+    typeWriter(
+"女孩安靜地坐在天台邊。\n\n"+
+"她似乎正在等待什麼。"
+    );
+
+    choiceBox.innerHTML="";
+
+    const options=[
+
+        ["呼喚她",()=>roofTalk()]
+
+    ];
+
+    if(
+        inventory.includes("八音盒")
+    ){
+
+        options.push(
+            ["轉動八音盒",
+            ()=>giveMusicBox()]
+        );
+
+    }
+
+    options.push(
+        ["離開",()=>enterRoof()]
+    );
+
+    createChoiceButtons(options);
+
+}
+
+function roofTalk(){
+
+    typeWriter(
+"女孩無動於衷，似乎沒聽見你的聲音。"
+    );
+
+}
+
+function giveMusicBox(){
+
+    inventory =
+    inventory.filter(
+        i=>i!=="八音盒"
+    );
+
+    flags.gaveMusicBox = true;
+
+    typeWriter(
+"變調的音樂隨著機芯的轉動響起，坐在天台邊緣的女孩身體僵硬了一瞬，而後緩慢轉過頭。\n\n"+
+"她的眼中充滿了希冀，然而，在看清你的那刻，你清楚的看見她眼底的光變得黯淡。\n\n"+
+"她沉默著，你並未出聲打擾，只是等待她的回應\n\n"+
+"「你在哪裡找到的？」"
+    );
+
+    choiceBox.innerHTML="";
+
+    createChoiceButtons([
+
+        ["「」",()=>giveMusicBox2()],
+      ["「",()=>showRoofGirlAfterBox()],
+       ["【】",()=>giveMusicBox2()]
+
+    ]);
+
+}
+
+function showRoofGirlAfterBox(){
+
+    typeWriter(
+"女孩抱著八音盒。\n\n"+
+"她的神情柔和了許多。"
+    );
+
+    choiceBox.innerHTML="";
+
+    const options=[
+
+        ["交談",()=>roofAfterTalk()]
+    ];
+
+    if(
+        inventory.includes("一封「情書」")
+    ){
+
+        options.push(
+            ["交出信件",
+             ()=>explore("giveGraduateLetter")]
+        );
+
+    }
+
+    options.push(
+        ["離開",()=>enterRoof()]
+    );
+
+    createChoiceButtons(options);
 
 }
   
@@ -2774,6 +2987,21 @@ if(!explored.officeKey){
 
 break;
 
+case "takeBracelet":
+
+    obtainItem(
+        "手鍊",
+        "你彎下腰撿起了那條手鍊。"
+    );
+
+    choiceBox.innerHTML="";
+
+    createChoiceButtons([
+        ["回到走廊",()=>move("hall")]
+    ]);
+
+break;
+
 case "water":
 
 showWaterMenu();
@@ -2856,99 +3084,18 @@ case "archiveBox":
 
 break;
 
-case "historyPhotos":
-
-    typeWriter(
-        "牆上掛滿歷屆學生的畢業照。\n\n許多人都露出燦爛笑容。"
-    );
-
-    choiceBox.innerHTML="";
-
-    createChoiceButtons([
-
-        ["仔細查看",()=>{
-
-            typeWriter(
-                "其中幾張照片似乎有些眼熟。"
-            );
-
-        }],
-
-        ["返回",()=>enterHistoryRoom()]
-
-    ]);
-
-break;
-
-case "historyShowcase":
-
-    typeWriter(
-        "展示櫃裡擺放著獎盃與紀念品。"
-    );
-
-    choiceBox.innerHTML="";
-
-    createChoiceButtons([
-
-        ["查看",()=>{
-
-            typeWriter(
-                "這些獎盃大多來自十多年前。"
-            );
-
-        }],
-
-        ["返回",()=>enterHistoryRoom()]
-
-    ]);
-
-break;
-
-case "mannequin":
-
-    typeWriter(
-        "角落裡放著一個雕像。\n\n它似乎正看著你。"
-    );
-
-    choiceBox.innerHTML="";
-
-    createChoiceButtons([
-
-        ["觀察",()=>{
-
-            typeWriter(
-                "只是普通的雕像。"
-            );
-
-        }],
-
-        ["返回",()=>enterHistoryRoom()]
-
-    ]);
-
-break;
 
 case "roofGirl":
 
-    typeWriter(
-        "一名女孩坐在露台邊緣。\n\n她背對著你。"
-    );
+if(!flags.gaveMusicBox){
 
-    choiceBox.innerHTML="";
+    showRoofGirl();
 
-    createChoiceButtons([
+}else{
 
-        ["呼喚她",()=>{
+    showRoofGirlAfterBox();
 
-            typeWriter(
-                "女孩沒有回應。"
-            );
-
-        }],
-
-        ["返回",()=>enterRoof()]
-
-    ]);
+}
 
 break;
 
@@ -2965,31 +3112,14 @@ case "roofEdge":
         ["俯瞰下方",()=>{
 
             typeWriter(
-                "樓下空無一人。"
+                "你往下看去，樓下空無一人。"
             );
 
         }],
-
-        ["返回",()=>enterRoof()]
-
-    ]);
-
-break;
-
-case "roofCorner":
-
-    typeWriter(
-        "角落堆著一些廢棄桌椅。"
-    );
-
-    choiceBox.innerHTML="";
-
-    createChoiceButtons([
-
-        ["翻找",()=>{
+      ["遙望遠方",()=>{
 
             typeWriter(
-                "沒有發現有價值的東西。"
+                "你看向天邊，大樓擋住了你的視野，但你依稀記得那個方向有一片海。"
             );
 
         }],
@@ -3000,8 +3130,173 @@ case "roofCorner":
 
 break;
 
+case "archiveNotebook":
 
-    
+    if(!explored.archiveNotebook){
+
+        explored.archiveNotebook = true;
+
+        obtainItem(
+            "筆記本",
+            "資料櫃角落放著一本筆記本。"
+        );
+
+    }else{
+
+        typeWriter(
+            "你已經拿走筆記本了。"
+        );
+
+    }
+
+break;
+
+case "mannequin":
+
+typeWriter(
+"一具人體模型立在角落。\n\n"+
+"雙手維持著奇怪的姿勢。"
+);
+
+choiceBox.innerHTML="";
+
+const options = [
+
+ ["觀察",()=>explore("mannequinLook")],
+
+ ["模仿姿勢",()=>explore("mannequinPose")]
+
+];
+
+if(
+    inventory.includes("手鍊") &&
+    flags.photoHint
+){
+
+    options.push(
+        ["把手鍊掛上去",
+         ()=>explore("putBracelet")]
+    );
+
+}
+
+options.push(
+    ["離開",()=>enterHistoryRoom()]
+);
+
+createChoiceButtons(options);
+
+break;
+
+case "mannequinLook":
+
+typeWriter(
+"模型的右手向前伸出。\n\n"+
+"左手則放在身後。\n\n"+
+"像是在展示什麼東西。"
+);
+
+break;
+
+case "mannequinPose":
+
+typeWriter(
+"你試著模仿人體模型的姿勢。\n\n"+
+"什麼也沒有發生。"
+);
+
+break;
+
+
+case "putBracelet":
+
+inventory =
+inventory.filter(
+i=>i!=="手鍊"
+);
+
+obtainItem(
+"八音盒",
+"手鍊套上模型手腕後。\n\n"+
+"模型胸腔傳來喀啦一聲。\n\n"+
+"一個暗格緩緩打開。"
+);
+
+break;
+
+case "giveGraduateLetter":
+
+    removeItem("畢業信");
+
+    gameFlags.graduateLetterDelivered = true;
+
+    typeWriter(
+`女孩顫抖著接過那封信。
+
+她小心地拆開信封。
+
+看著熟悉的字跡，她沉默了很久。
+
+「原來如此……」
+
+她低聲說著。
+
+那些始終無法放下的等待、
+那些停留在這間圖書館的理由，
+終於在此刻得到答案。
+
+女孩將信抱在胸前。
+
+「謝謝你。」
+
+她露出了第一次真正的微笑。
+
+「我已經知道他想說的話了。」
+
+「現在的我，可以離開了。」
+
+她抬頭望向窗外。
+
+「圖書館不會再阻攔我了。」
+
+「也不會再阻攔你。」
+
+少女的身影逐漸變淡。
+
+最後只剩下微弱的聲音。
+
+「謝謝你願意找到真相。」`
+    );
+
+    addMemo(
+        "女孩已經離開了。\n或許還有什麼事情尚未完成。"
+    );
+
+    createChoiceButtons([
+        ["離開天台",()=>enterRoof()]
+    ]);
+
+break;
+
+case "leaveLibrary":
+
+    if(gameFlags.letterBurned){
+
+        showTrueEnding();
+
+    }
+    else if(gameFlags.graduateLetterDelivered){
+
+        showNearTrueEnding();
+
+    }
+    else{
+
+        showNormalEnding();
+
+    }
+
+break;
 }
 
 }
@@ -3337,6 +3632,7 @@ function showInventory(){
 
     panelContent.appendChild(list);
 }
+
 function showItem(item){
 
     const data=itemData[item];
@@ -3354,25 +3650,26 @@ function showItem(item){
 
         btn.className="side-btn";
 
-        btn.innerText="查看內容";
+        if(item==="筆記本"){
 
-       btn.onclick=()=>{
+    btn.innerText="閱讀筆記";
 
-    if(item==="筆記本"){
+    btn.onclick=()=>{
 
         notebookPage=0;
 
-        readNotebook();
+        showNotebookPage();
 
-    }
+    };
 
-    else{
 
-        readItem(item);
+        }else{
 
-    }
+            btn.innerText="查看內容";
 
-};
+            btn.onclick=()=>readItem(item);
+
+        }
 
         panelContent.appendChild(
             document.createElement("br")
@@ -3387,6 +3684,7 @@ function showItem(item){
     }
 
 }
+        
   function readItem(item){
 
     const data=itemData[item];
@@ -3421,6 +3719,15 @@ text+="• "+m+"\n\n";
 });
 
 panelContent.innerText=text;
+
+if(gameFlags.graduateLetterDelivered &&
+   !gameFlags.letterBurned){
+
+    memo.push(
+        "女孩已經離開。\n或許可以回自修室看看。"
+    );
+
+}
 
 }
 
