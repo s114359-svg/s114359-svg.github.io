@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+一<!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8">
@@ -350,7 +350,9 @@ const defaultFlags = {
     letterBurned:false,      
     officeBurned:false,
     officeDeathWarning:false,
-
+    graduateDelivered: false,
+letterWritten: false,
+letterBurned: false,
     borrowCardReturned:false,
     libraryCardReturnedOnce:false,
     readBorrowRecord:false,
@@ -2526,7 +2528,7 @@ break;
 
 case "letterPaper":
 
-startLetterWriting();
+writeLetter();
 
 break;
 
@@ -3226,54 +3228,108 @@ break;
 
 case "giveGraduateLetter":
 
-    removeItem("畢業信");
-
-    gameFlags.graduateLetterDelivered = true;
+    inventory =
+inventory.filter(
+i=>i!=="手鍊"
+);
+    flags.graduateLetterDelivered = true;
 
     typeWriter(
-`女孩顫抖著接過那封信。
-
-她小心地拆開信封。
+`女孩顫抖著接過那封信，小心地拆開信封。
 
 看著熟悉的字跡，她沉默了很久。
 
-「原來如此……」
+直到翻到信的背面，她的臉上才流露出笑意，似乎是在緬懷從前。
 
-她低聲說著。
+笑著笑著，一滴淚從她的眼角流下。
 
-那些始終無法放下的等待、
-那些停留在這間圖書館的理由，
-終於在此刻得到答案。
+她連忙伸手去擦，然而淚水卻如同斷線的珍珠一般不斷下落，滾燙的淚珠在地面暈開水痕。
 
-女孩將信抱在胸前。
+「這個笨蛋……」
+
+她哽咽著，緊抱那一紙薄薄的信，狼狽地蹲在地上，泣不成聲，像是要把這輩子的淚都流乾。
+
+露臺上只剩下她低微的啜泣聲迴盪。
+
+過了不久，哭聲漸歇，她疲憊地跌坐在地，仰頭看你。
 
 「謝謝你。」
 
-她露出了第一次真正的微笑。
+她臉上淚痕未乾，表情也有些悲傷，你卻不覺得她難過。
 
-「我已經知道他想說的話了。」
+「這座圖書館不會阻攔你了。」`
 
-「現在的我，可以離開了。」
+    );
 
-她抬頭望向窗外。
+     document.querySelector("#choices").innerHTML = "";
 
-「圖書館不會再阻攔我了。」
+    createChoiceButtons([
+        ["「那你呢？」",()=>explore("giveGraduateLetter2")]
+    ]);
 
-「也不會再阻攔你。」
+break;
 
-少女的身影逐漸變淡。
+case "giveGraduateLetter2":
 
-最後只剩下微弱的聲音。
+    typeWriter(
+`女孩明顯愣住了，`
 
-「謝謝你願意找到真相。」`
     );
 
     addMemo(
         "女孩已經離開了。\n或許還有什麼事情尚未完成。"
     );
 
+     document.querySelector("#choices").innerHTML = "";
+
     createChoiceButtons([
-        ["離開天台",()=>enterRoof()]
+        ["離開天臺",()=>enterRoof()]
+    ]);
+
+break;
+
+case "burnLetter":
+
+   flags.letterBurned = true;
+
+    typeWriter(
+`你坐回那張熟悉的座位。
+
+桌上放著女孩交給你的信。
+
+信封已經泛黃。
+
+你拿出火柴。
+
+火光點燃紙張。
+
+火焰沿著信紙慢慢蔓延。
+
+字跡逐漸化為灰燼。
+
+彷彿跨越多年時光。
+
+將那句遲來的告別送往另一個世界。
+
+火焰熄滅後。
+
+自修室變得異常安靜。
+
+窗外吹進一陣風。
+
+桌上的灰燼隨風散去。
+
+你忽然覺得。
+
+有些人終於能夠好好告別了。`
+    );
+
+    addMemo(
+        "所有未完成的思念似乎都已畫下句點。"
+    );
+
+    createChoiceButtons([
+        ["離開自修室",()=>enterStudyRoom()]
     ]);
 
 break;
@@ -3301,142 +3357,44 @@ break;
 
 }
 
-function startLetterWriting(){
+function writeLetter(){
 
-    letterState="";
-
-    chooseLetterPart1();
-
-}
-
-function chooseLetterPart1(){
-
-    typeWriter("信的開頭要寫什麼？");
-
-    choiceBox.innerHTML="";
-
-    addLetterChoice("親愛的朋友",1,chooseLetterPart2);
-
-    addLetterChoice("我一直想告訴你",2,chooseLetterPart2);
-
-}
-
-function chooseLetterPart2(){
-
-    typeWriter("接下來呢？");
-
-    choiceBox.innerHTML="";
-
-    addLetterChoice("謝謝你的陪伴",1,chooseLetterPart3);
-
-    addLetterChoice("其實我很害怕",2,chooseLetterPart3);
-
-}
-
-function chooseLetterPart3(){
-
-    typeWriter("最後寫下什麼？");
-
-    choiceBox.innerHTML="";
-
-    addLetterChoice("希望還能再見",1,finishLetter);
-
-    addLetterChoice("請不要忘記我",2,finishLetter);
-
-}
-
-function addLetterChoice(text,id,next){
-
-    let btn=document.createElement("button");
-
-    btn.className="choice";
-
-    btn.innerText=text;
-
-    btn.onclick=()=>{
-
-        letterState+=id;
-
-        next();
-
-    };
-
-    choiceBox.appendChild(btn);
-
-}
-
-function finishLetter(){
-
-    let content = generateLetterContent();
-
-    itemData["信紙"].content = content;
-
-    obtainItem(
-        "信紙",
-        "你完成了一封信。"
+    typeWriter(
+        "桌上不知何時出現了一張空白信紙。",
+        "",
+        "你拿起筆。",
+        "",
+        "寫下那些從未說出口的話。"
     );
 
+    showChoices([
+        {
+            text:"完成信件",
+            action:()=>{
+
+                gameState.flags.letterWritten = true;
+
+                addMemo(
+                    "信已完成。\n若有打火機，也許能將它送往該去的地方。"
+                );
+
+                showText([
+                    "你將信摺好。",
+                    "",
+                    "有些話終於被寫下。"
+                ]);
+
+                showChoices([
+                    {
+                        text:"返回",
+                        action:()=>moveTo("studyRoom")
+                    }
+                ]);
+            }
+        }
+    ]);
 }
-
-function generateLetterContent(){
-
-    if(currentLetterCode){
-        flags["letter_"+currentLetterCode] = false;
-    }
-
-    currentLetterCode = letterState;
-
-    flags["letter_"+letterState] = true;
-
-
-    const map={
-
-        "1":"親愛的朋友",
-
-        "2":"我一直想告訴你"
-
-    };
-
-    let text="";
-
-    switch(letterState[0]){
-
-        case "1":
-            text+="親愛的朋友\n\n";
-            break;
-
-        case "2":
-            text+="我一直想告訴你\n\n";
-            break;
-    }
-
-    switch(letterState[1]){
-
-        case "1":
-            text+="謝謝你的陪伴。\n\n";
-            break;
-
-        case "2":
-            text+="其實我很害怕。\n\n";
-            break;
-    }
-
-    switch(letterState[2]){
-
-        case "1":
-            text+="希望還能再見。";
-            break;
-
-        case "2":
-            text+="請不要忘記我。";
-            break;
-    }
-
-    flags["letter_"+letterState]=true;
-
-    return text;
-
-}
+  
 
 function showSleepStage1(){
 
@@ -3528,20 +3486,17 @@ function showSleepStage3(){
   
 function showSleepEnding(){
 
-    textBox.style.color="#ff4444";
+    showEnding(
 
-    choiceBox.innerHTML="";
+        "年輕真好，倒頭就睡",
 
-    typeWriter(
-    "你被沙發吞噬，永遠的陷入安眠，再也無法感受到任何事物，僅僅是存在著而已。"
+        "你被沙發吞噬，\n\n" +
+       "成為了圖書館的一部份。\n\n" +
+        "永遠陷入無夢的安眠。\n\n" +
+        "再也無法感受到任何事物。"
+
     );
 
-    setTimeout(()=>{
-
-        textBox.innerHTML +=
-        "\n\n【結局：年輕真好，倒頭就睡】";
-
-    },1000);
 
 }
 
@@ -3723,7 +3678,7 @@ panelContent.innerText=text;
 if(gameFlags.graduateLetterDelivered &&
    !gameFlags.letterBurned){
 
-    memo.push(
+    memos.push(
         "女孩已經離開。\n或許可以回自修室看看。"
     );
 
