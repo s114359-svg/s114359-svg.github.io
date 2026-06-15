@@ -1114,15 +1114,58 @@ function showDeskMenu(){
 
     choiceBox.innerHTML="";
 
+
     const options=[
 
-        ["鉛筆盒",()=>explore("pencilCase")],
-
-        ["信紙",()=>explore("letterPaper")],
-
-        ["離開",()=>renderScene()]
+        ["鉛筆盒",()=>explore("pencilCase")]
 
     ];
+
+
+
+    // 畢業信交付後，才出現信紙
+    if(
+        flags.graduateLetterDelivered &&
+        !flags.letterWritten
+    ){
+
+        options.push(
+            [
+                "信紙",
+                ()=>writeLetter()
+            ]
+        );
+
+    }
+
+
+
+    // 寫完信 + 有打火機，才出現燒信
+    if(
+        flags.letterWritten &&
+        inventory.includes("打火機") &&
+        !flags.letterBurned
+    ){
+
+        options.push(
+            [
+                "燒掉信紙",
+                ()=>explore("burnLetter")
+            ]
+        );
+
+    }
+
+
+
+    options.push(
+        [
+            "離開",
+            ()=>renderScene()
+        ]
+    );
+
+
 
     options.forEach(c=>{
 
@@ -3385,7 +3428,7 @@ function writeLetter(){
             text:"完成信件",
             action:()=>{
 
-                gameState.flags.letterWritten = true;
+                flags.letterWritten = true;
 
                 addMemo(
                     "信已完成。\n若有打火機，也許能將它送往該去的地方。"
@@ -3396,10 +3439,10 @@ function writeLetter(){
         
                 ]);
 
-                showChoices([
+                createChoiceButton([
                     {
                         text:"返回",
-                        action:()=>moveTo("studyRoom")
+                        action:()=>showDeskMenu()
                     }
                 ]);
             }
@@ -3687,14 +3730,8 @@ text+="• "+m+"\n\n";
 
 panelContent.innerText=text;
 
-if(gameFlags.graduateLetterDelivered &&
-   !gameFlags.letterBurned){
 
-    memos.push(
-        "女孩已經離開。\n或許可以回自修室看看。"
-    );
 
-}
 
 }
 
