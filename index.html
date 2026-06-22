@@ -375,6 +375,135 @@ transform:translateY(0);
     }
 
 }
+
+#warningCrash{
+
+
+position:fixed;
+
+top:0;
+
+left:0;
+
+
+width:100vw;
+
+height:100vh;
+
+
+background:black;
+
+
+z-index:99999;
+
+
+overflow:hidden;
+
+
+pointer-events:auto;
+
+
+}
+
+
+
+.warningWord{
+
+
+position:absolute;
+
+
+color:#8b0000;;
+
+
+font-size:35px;
+
+
+font-weight:bold;
+
+
+letter-spacing:5px;
+
+
+opacity:0;
+
+
+animation:
+appear 1s forwards;
+
+
+}
+
+
+
+@keyframes appear{
+
+
+from{
+
+opacity:0;
+
+transform:scale(0.5);
+
+}
+
+
+to{
+
+opacity:1;
+
+transform:scale(1);
+
+}
+
+
+}
+
+
+
+
+.blackScreen{
+
+
+background:black;
+
+
+}
+
+
+
+.deadMessage{
+
+
+width:100%;
+
+height:100%;
+
+
+display:flex;
+
+
+justify-content:center;
+
+align-items:center;
+
+
+text-align:center;
+
+
+color:white;
+
+
+font-family:monospace;
+
+
+font-size:40px;
+
+
+letter-spacing:10px;
+
+
+}
 </style>
 </head>
 <body>
@@ -3584,7 +3713,21 @@ case "burnLetter":
 break;
 
 case "leaveLibrary":
+    flags.gateLeaveCount++;
 
+
+
+    if(flags.gateLeaveCount>=3){
+
+        triggerWarningCrash();
+
+        return;
+
+    }
+     typeWriter(
+        "你走向大門。\n\n"+
+        "擰動門把，試圖推開門，但門紋絲不動。"
+    );
     if(flags.letterBurned){
 
         showTrueEnding();
@@ -3600,6 +3743,7 @@ case "leaveLibrary":
         showNormalEnding();
 
     }
+    
 
 break;
 }
@@ -3677,6 +3821,145 @@ function showSleepStage2(){
     };
 
     choiceBox.appendChild(btn);
+
+}
+      
+function triggerWarningCrash(){
+
+
+    let overlay=document.createElement("div");
+
+    overlay.id="warningCrash";
+
+
+    document.body.appendChild(overlay);
+
+
+
+    let count=0;
+
+
+    let textInterval=setInterval(()=>{
+
+
+        let word=document.createElement("div");
+
+        word.className="warningWord";
+
+        const warnings=[
+
+    "門外不是出口",
+
+"這裡才是真相",
+
+"你為什麼不回頭",
+
+"不要繼續走",
+
+"你逃不掉",
+
+"沒有人能離開",
+"你聽到了嗎",
+
+"有人在呼喚你",
+
+"不要關上門",
+
+"不要離開圖書館",
+
+          
+    "你不能離開",
+
+    "還沒有結束",
+
+    "你忘記了什麼",
+
+    "回去",
+
+    "不要逃",
+
+    "答案還在裡面",
+
+    "不要丟下我",
+
+    "你真的要離開嗎",
+
+    "永遠陪著我們"
+
+];
+
+
+word.innerText =
+warnings[
+Math.floor(Math.random()*warnings.length)
+];
+
+
+        word.style.left=
+        Math.random()*90+"%";
+
+
+        word.style.top=
+        Math.random()*90+"%";
+
+
+
+        overlay.appendChild(word);
+
+
+
+        count++;
+
+
+
+        if(count>=60){
+
+
+            clearInterval(textInterval);
+
+
+
+            setTimeout(()=>{
+
+
+                overlay.innerHTML="";
+
+
+                overlay.className="blackScreen";
+
+
+
+                setTimeout(()=>{
+
+
+                    overlay.innerHTML=`
+
+                    <div class="deadMessage">
+
+                    ERROR<br><br>
+
+                    不要嘗試離開圖書館，不要反抗<br><br>
+
+                    加入我們，永遠成為我們的一份子，「祂」很喜歡你
+                    </div>
+
+
+                    `;
+
+
+                },1000);
+
+
+
+            },1000);
+
+
+        }
+
+
+
+    },80);
+
 
 }
 
