@@ -375,11 +375,13 @@ let sleepCount = 0;
 let lostFoundItem = null;
 const notebookPages = [
 
-`我想幫她。
+`她看起來好孤單。
 
-儘管我做不到什麼，
+但其實她笑起來很好看，
 
-但我希望她能開心一點`,
+我想和她做朋友，
+
+希望她能開心一點`,
 
 `她笑得好勉強，
 
@@ -393,7 +395,7 @@ const notebookPages = [
 
 我聽到她在旁邊偷笑，
 
-火就很恐怖嘛。
+火就很恐怖嘛
 
 但看在她事後投餵我的份上，
 
@@ -419,7 +421,7 @@ const notebookPages = [
 
 感謝老師感謝媽媽感謝老天爺。
 
-感謝○○○。`,
+感謝李意涵。`,
 
 `大吵了一架，
 
@@ -430,31 +432,31 @@ let photoPage = 0;
 
 const historyPhotos = [
 
-`第15屆畢業生
+`一張全班合照
 
-照片裡的學生們笑得很開心。`,
+一位獨自站在角落的少女引起了你的注意。`,
 
-`第16屆畢業生
+`一張小組照片
 
-角落有個女孩對鏡頭比出奇怪手勢。`,
+你認出背景是學校附近的一間咖啡廳，
 
-`第17屆畢業生
+那位少女站在邊緣笑得靦腆，貼著她身體的另一位少女燦爛地笑著。`,
 
-你看見一個熟悉的身影。
+`一張運動會的照片，
 
-她站在最後一排。`,
+兩個熟悉的身影在人群後面，她們沒有看鏡頭，相視聊天。`,
 
-`第18屆畢業生
+`一張遊覽車上的照片，
 
-兩個女孩靠得很近。
+少女靠在椅背上睡得安穩，鏡頭對準了她的睡顏，照片邊緣冒出的那隻手彰顯了另一個人的存在。`,
 
-其中一人把手搭在另一人的肩膀上。`,
+`一張在校史室的照片，
 
-`第19屆畢業生
+活潑的女孩滑稽地模仿雕像的動作，右手上的手鍊似乎有些眼熟。`,
 
-照片右下角寫著：
-
-「永遠的朋友」`
+`一張在天臺的照片，
+  
+兩個背影緊密坐在一起。`
 
 ];
 
@@ -569,7 +571,7 @@ content:
     readable:true,
 
     content:
-"你知道她最近怎麼了嗎？\n\n她？誰啊？\n\n就成績很好的那個 昨天去圖書館的時候看到她在走廊和自修室那邊走來走去 還一直喃喃自語 跟中邪一樣\n\n啊？可是，她不是這幾天都沒來學校嗎？",
+"你知道她最近怎麼了嗎？\n\n她？誰啊？\n\n就成績很好的那個 昨天去圖書館的時候看到她在走廊和自修室那邊走來走去 還一直喃喃自語 跟中邪一樣\n\n啊？可是她不是已經......(後面的字跡變得模糊，難以辨識)",
 
     flag:"read_blood_key"
 },
@@ -1822,8 +1824,9 @@ function ropeStage2(){
     textBox.style.color="#995555";
     typeWriter(
 "耳邊傳來細微的低語。\n\n" +
-"腳步聲逐漸遠去。\n\n" +
-"你開始懷疑自己是否真的存在。"
+"你逐步走向那段繩索。\n\n" +
+"身體像是失去了控制。\n\n" +
+"你將"
     );
 
     createChoiceButtons([
@@ -2439,10 +2442,9 @@ function giveMusicBox(){
 
     createChoiceButtons([
 
-        ["「」",()=>giveMusicBox2()],
-      ["「",()=>showRoofGirlAfterBox()],
-       ["【】",()=>giveMusicBox2()]
-
+       
+      ["「校史室的雕像那裡。」",()=>showRoofGirlAfterBox()],
+      
     ]);
 
 }
@@ -2450,6 +2452,7 @@ function giveMusicBox(){
 function showRoofGirlAfterBox(){
 
     typeWriter(
+"「原來在那裡啊……」她自言自語道。\n\n"+
 "女孩抱著八音盒。\n\n"+
 "她的神情柔和了許多。"
     );
@@ -3348,6 +3351,21 @@ case "giveGraduateLetter2":
 
 break;
 
+case "finishletter":
+     flags.letterWritten = true;
+
+    typeWriter( "你將信拂平放在桌上。");
+
+                addMemo(
+                    "信已完成。\n若有打火機，也許能將它送往該去的地方。"
+                );
+    createChoiceButtons([
+        ["返回",()=>explore("desk")]
+    ]);
+    break;
+
+                
+
 case "burnLetter":
 
    flags.letterBurned = true;
@@ -3385,19 +3403,19 @@ case "burnLetter":
     );
 
     createChoiceButtons([
-        ["離開自修室",()=>enterStudyRoom()]
+        ["離開自修室",()=>move("hall")]
     ]);
 
 break;
 
 case "leaveLibrary":
 
-    if(gameFlags.letterBurned){
+    if(flags.letterBurned){
 
         showTrueEnding();
 
     }
-    else if(gameFlags.graduateLetterDelivered){
+    else if(flags.graduateLetterDelivered){
 
         showNearTrueEnding();
 
@@ -3416,39 +3434,17 @@ break;
 function writeLetter(){
 
     typeWriter(
-        "桌上不知何時出現了一張空白信紙。",
-        "",
-        "你拿起筆。",
-        "",
-        "寫下那些來不及送出的話。"
+        "桌上不知何時出現了一張空白信紙。\n\n你拿起筆。\n\n寫下那些來不及送出的話。"
+       
     );
 
-    showChoices([
-        {
-            text:"完成信件",
-            action:()=>{
-
-                flags.letterWritten = true;
-
-                addMemo(
-                    "信已完成。\n若有打火機，也許能將它送往該去的地方。"
-                );
-
-                showText([
-                    "你將信拂平放在桌上。"
-        
-                ]);
-
-                createChoiceButton([
-                    {
-                        text:"返回",
-                        action:()=>showDeskMenu()
-                    }
-                ]);
-            }
-        }
+        createChoiceButtons([
+        ["完成信件",()=>explore("finishletter")]
     ]);
-}
+  }
+
+               
+                
   
 
 function showSleepStage1(){
@@ -3581,6 +3577,66 @@ function officeFireDeath(){
         "你倒在火海之中。\n\n" +
         "辦公室裡的東西真的值得你付出生命嗎？"
     );
+
+}
+
+function showNearTrueEnding(){
+
+    showEnding2(
+        "一牆之隔",
+"你走出圖書館，夜風迎面吹來。\n\n"+
+"圖書館恢復了平靜。\n\n" +
+"然而在離開時。\n\n" +
+"你仍忍不住回頭望了一眼，似乎是錯覺，你望見自修室裡少女獨自坐著，手上是那封信件。\n\n" +
+"而一牆之隔的閱覽室坐著你從未見過卻無比熟悉的人，她趴在桌上，面前是一疊信紙。\n\n"+
+"你這才驚覺，原來被困住的從來不只一人。\n\n" +
+"或許有一天。\n\n" +
+"你還會再次回到這裡。"
+    
+  );
+
+}
+
+function showTrueEnding(){
+
+    showEnding(
+        "真結局：寫完的故事",
+"你走出圖書館。\n\n"+
+
+"夜色依舊寧靜，像一個平凡的晚上，似乎自己好像只是在圖書館睡了一覺。\n\n"+
+
+"但你清楚知道，剛剛發生的一切都是真實的。\n\n" +
+
+"那封未能送出的信，終於抵達她的手中。\n\n" +
+
+"而她的回應，也透過火焰傳達給了另一端。\n\n" +
+
+"故事在此畫下句點。\n\n" +
+
+"你回頭望向圖書館。\n\n" +
+
+"窗戶裡不再有徘徊的人影，只剩下柔和的燈光。\n\n" +
+
+"你解決了眾多悲劇的其中一個，可你知道這間圖書館埋藏著多少未解之謎，而這次僅僅是一個開端。"
+
+    );
+
+}
+function showEnding2(title,text){
+
+    setShake(null);
+
+
+    choiceBox.innerHTML="";
+
+    typeWriter(text);
+
+    setTimeout(()=>{
+
+        textBox.innerHTML +=
+        "\n\n【結局："+title+"】";
+
+    },2500);
 
 }
 
