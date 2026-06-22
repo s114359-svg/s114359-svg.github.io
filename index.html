@@ -232,11 +232,174 @@ body{
         gap:20px;
     }
 
+#titleScreen{
 
+    position:fixed;
+
+    width:100%;
+    height:100%;
+
+    background:
+    linear-gradient(
+        rgba(0,0,0,0.65),
+        rgba(0,0,0,0.85)
+    ),
+    url("library.jpg");
+
+
+    background-size:cover;
+
+    background-position:center;
+
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+
+    z-index:999;
+
+}
+
+
+
+.titleBox{
+
+    text-align:center;
+
+    color:white;
+
+    animation:fadeIn 2s;
+
+}
+
+
+
+.titleBox h1{
+
+    font-size:48px;
+
+    letter-spacing:8px;
+
+}
+
+
+
+.titleBox p{
+
+    margin-top:30px;
+
+    line-height:2;
+
+    opacity:0.8;
+
+}
+
+
+
+.titleBox button{
+
+    margin-top:40px;
+
+    padding:15px 50px;
+
+    font-size:20px;
+
+    cursor:pointer;
+
+}
+
+
+
+@keyframes fadeIn{
+
+from{
+
+opacity:0;
+
+transform:translateY(20px);
+
+}
+
+to{
+
+opacity:1;
+
+transform:translateY(0);
+
+}
+
+}
+
+.warningText{
+
+    margin-top:20px;
+
+    color:red;
+
+    font-size:28px;
+
+    letter-spacing:6px;
+
+    font-weight:bold;
+
+
+    animation:warningFade 2s infinite;
+
+}
+
+
+
+@keyframes warningFade{
+
+    0%{
+
+        opacity:1;
+
+    }
+
+
+    50%{
+
+        opacity:0.3;
+
+    }
+
+
+    100%{
+
+        opacity:1;
+
+    }
+
+}
 </style>
 </head>
 <body>
+<div id="titleScreen">
 
+    <div class="titleBox">
+
+        <h1>放學後的圖書館</h1>
+
+        <p>
+        在圖書館的自修室睡著後，你發現窗外的天已經黑了，圖書館瀰漫著詭異的氛圍<br>
+        你試圖忽略心裡湧起的恐懼，試著打開圖書館大門。<br>卻發現大門無論如何都無法打開，看來只能回頭探索了。<br>嘗試在圖書館裡尋找真相並活著走出去吧。
+        </p>
+
+        
+      <div class="warningText">
+             請記得，不要死了
+        </div>
+        <button onclick="startGame()">
+            開始探索
+        </button>
+
+    </div>
+
+</div>
 <div id="game">
 
     <div id="main">
@@ -342,7 +505,7 @@ let memos = [];
 let explored = {};
 
 const defaultFlags = {
-
+    gateLeaveCount:0,
     readOfficeChat:false,
     libraryCardReturned:false,
     sunnyDollEvent:false,
@@ -1107,6 +1270,17 @@ function showPlantMenu(){
         choiceBox.appendChild(btn);
 
     });
+
+}
+
+function startGame(){
+
+    document.getElementById(
+        "titleScreen"
+    ).style.display="none";
+
+
+    renderScene();
 
 }
 
@@ -2595,7 +2769,7 @@ break;
 case "la":
 
 typeWriter(
-"1.請勿在沙發上睡覺。\n\n2.請記得在逾借前將書籍放入還書箱，違者缺點一支，禁止借閱一周。\n\n3.失物招領請出示借書證");
+"1.請勿在沙發上睡覺。\n\n2.請記得在逾借前將書籍放入還書箱，違者缺點一支，禁止借閱一周。\n\n3.由於有非本校學生冒領失物，領回失物請出示借書證。");
 
 break;
     
@@ -2976,7 +3150,7 @@ break;
 case "officeTime":
 
 typeWriter(
-"系統時間顯示：\n\n18:53"
+"系統時間顯示：\n\n17:42"
 );
 
 break;
@@ -2991,7 +3165,7 @@ case "officeChat":
 flags.readOfficeChat = true;
     
 typeWriter(
-"最後一則訊息：\n\n『不要讓學生留到閉館後。』"
+"我的東西忘在圖書館了，可以現在去拿嗎？閉館前會走。\n\n可以，自己去失物招領那邊拿。"
 );
 
 break;
