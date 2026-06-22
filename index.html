@@ -1982,9 +1982,9 @@ function startRopeEvent(){
     setShake("shakeStrong");
     createChoiceButtons([
 
-        ["掙扎",()=>ropeStage2()],
+        ["離開",()=>ropeStage2()],
 
-        ["沉淪",()=>ropeDeath()]
+        ["走過去",()=>ropeDeath()]
 
     ]);
 
@@ -2000,14 +2000,15 @@ function ropeStage2(){
 "耳邊傳來細微的低語。\n\n" +
 "你逐步走向那段繩索。\n\n" +
 "身體像是失去了控制。\n\n" +
-"你將"
+"你將頭穿過繩圈。\n\n" +
+"繩索逐漸收緊。"
     );
 
     createChoiceButtons([
 
         ["掙扎",()=>ropeStage3()],
 
-        ["沉淪",()=>ropeDeath()]
+        ["放棄掙扎",()=>ropeDeath()]
 
     ]);
 
